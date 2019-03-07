@@ -1,0 +1,5 @@
+- addRangeMark*s*
+- arbitrary meta
+- placholder
+- click handler
+- decoration positions

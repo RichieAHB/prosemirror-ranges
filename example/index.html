@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="https://prosemirror.net/css/editor.css">
+  <title>Document</title>
+  <style>
+  gu-note {
+    background-color: rgba(0, 255, 255, 0.25);
+    box-shadow: inset 0 1px 0 0 darkcyan, inset 0 -1px 0 0 darkcyan;
+    vertical-align: bottom;
+  }
+
+  gu-flag {
+    background-color: rgba(255, 166, 0, 0.25);
+    box-shadow: inset 0 1px 0 0 darkorange, inset 0 -1px 0 0 darkorange;
+    vertical-align: bottom;
+  }
+
+  gu-correct {
+    background-color: rgba(0, 128, 0, 0.25);
+    box-shadow: inset 0 1px 0 0 darkgreen, inset 0 -1px 0 0 darkgreen;
+    vertical-align: bottom;
+  }
+
+  .end {
+    vertical-align: bottom;
+  }
+
+  .end::before {
+    content: ' ';
+  }
+
+  .end--note {
+    background-color: rgba(0, 255, 255, 0.25);
+    box-shadow: inset 0 1px 0 0 darkcyan, inset 0 -1px 0 0 darkcyan;
+  }
+
+  .end--note.end--start {
+    box-shadow: inset 0 1px 0 0 darkcyan, inset 0 -1px 0 0 darkcyan, inset 1px 0 0 0 darkcyan;
+  }
+
+  .end--note.end--end {
+    box-shadow: inset 0 1px 0 0 darkcyan, inset 0 -1px 0 0 darkcyan, inset -1px 0 0 0 darkcyan;
+  }
+  
+
+  .end--flag {
+    background-color: rgba(255, 166, 0, 0.25);
+  }
+
+  .end--flag.end--start {
+    box-shadow: inset 0 1px 0 0 darkorange, inset 0 -1px 0 0 darkorange, inset 1px 0 0 0 darkorange;
+  }
+
+  .end--flag.end--end {
+    box-shadow: inset 0 1px 0 0 darkorange, inset 0 -1px 0 0 darkorange, inset -1px 0 0 0 darkorange;
+  }
+
+  .end--correct {
+    background-color: rgba(0, 128, 0, 0.25);
+  }
+
+  .end--correct.end--start {
+    box-shadow: inset 0 1px 0 0 darkgreen, inset 0 -1px 0 0 darkgreen, inset 1px 0 0 0 darkgreen;
+  }
+
+  .end--correct.end--end {
+    box-shadow: inset 0 1px 0 0 darkgreen, inset 0 -1px 0 0 darkgreen, inset -1px 0 0 0 darkgreen;
+  }
+  </style>
+</head>
+<body>
+  <div id="content" style="display: none;">Here is some content</div>
+  <div id="editor"></div>
+  <script src="./dist/bundle.js""></script>
+</body>
+</html>
