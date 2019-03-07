@@ -6,13 +6,16 @@ const createEndDeco = (
   type: string,
   id: string,
   cursor: number | null,
-  bias: number
+  bias: number,
+  railIndex: number
 ) => {
+  console.log(-bias * (railIndex + 1), type);
   const span = document.createElement("span");
   span.classList.add("end", `end--${side}`, `end--${type}`);
+  const sideBias = side === "start" ? 1 : -1;
   return Decoration.widget(pos, span, {
     key: `${side}:${id}:${cursor === pos ? bias : ""}`,
-    side: -bias,
+    side: -bias + (sideBias * (railIndex + 1)),
     marks: []
   });
 };

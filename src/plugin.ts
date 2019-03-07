@@ -11,8 +11,9 @@ const ranges = (
   markTypes: { [railName: string]: MarkType },
   historyPlugin: Plugin,
   getId?: () => string
-) =>
-  new Plugin<State>({
+) => {
+  const railNames = Object.keys(markTypes);
+  return new Plugin<State>({
     state: {
       init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
       apply: (tr, rs, oldState, newState) => {
@@ -68,11 +69,33 @@ const ranges = (
         const rs = this.getState(state);
         return DecorationSet.create(
           state.doc,
-          rs.ranges.reduce(
-            (acc, { from, to, id, type }) => [
-              ...acc,
-              createEndDeco(from, "start", type, id, rs.cursor, rs.cursorBias),
-              createEndDeco(to, "end", type, id, rs.cursor, rs.cursorBias)
+          Object.entries(rs.rails).reduce(
+            (acc1, [railName, rail]) => [
+              ...acc1,
+              ...rail.ranges.reduce(
+                (acc2, { from, to, id, type }) => [
+                  ...acc2,
+                  createEndDeco(
+                    from,
+                    "start",
+                    type,
+                    id,
+                    rs.cursor,
+                    rs.cursorBias,
+                    railNames.indexOf(railName)
+                  ),
+                  createEndDeco(
+                    to,
+                    "end",
+                    type,
+                    id,
+                    rs.cursor,
+                    rs.cursorBias,
+                    railNames.indexOf(railName)
+                  )
+                ],
+                [] as Decoration[]
+              )
             ],
             [] as Decoration[]
           )
@@ -80,5 +103,6 @@ const ranges = (
       }
     }
   });
+};
 
 export { ranges };

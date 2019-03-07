@@ -15728,6 +15728,7 @@
 	        return (this.count && this.reduce((max, { to }) => Math.max(max, to), -Infinity));
 	    }
 	}
+	//# sourceMappingURL=rail.js.map
 
 	const readRangesFromDoc = (doc, markType, min, max) => {
 	    const ranges = {};
@@ -15936,12 +15937,14 @@
 	}
 	//# sourceMappingURL=rail-set.js.map
 
-	const createEndDeco = (pos, side, type, id, cursor, bias) => {
+	const createEndDeco = (pos, side, type, id, cursor, bias, railIndex) => {
+	    console.log(-bias * (railIndex + 1), type);
 	    const span = document.createElement("span");
 	    span.classList.add("end", `end--${side}`, `end--${type}`);
+	    const sideBias = side === "start" ? 1 : -1;
 	    return dist_2$3.widget(pos, span, {
 	        key: `${side}:${id}:${cursor === pos ? bias : ""}`,
-	        side: -bias,
+	        side: -bias + (sideBias * (railIndex + 1)),
 	        marks: []
 	    });
 	};
@@ -15950,59 +15953,64 @@
 	const transformPasted = (markTypes) => ({ content, openStart, openEnd }) => new dist_5(sanitizeFragment(content, Object.values(markTypes), true), openStart, openEnd);
 	//# sourceMappingURL=transform-pasted.js.map
 
-	const ranges = (markTypes, historyPlugin, getId) => new dist_8$2({
-	    state: {
-	        init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
-	        apply: (tr, rs, oldState, newState) => {
-	            if (tr.getMeta(historyPlugin) || tr.getMeta("paste")) {
-	                return RailSet.fromDoc(markTypes, newState.doc);
+	const ranges = (markTypes, historyPlugin, getId) => {
+	    const railNames = Object.keys(markTypes);
+	    return new dist_8$2({
+	        state: {
+	            init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
+	            apply: (tr, rs, oldState, newState) => {
+	                if (tr.getMeta(historyPlugin) || tr.getMeta("paste")) {
+	                    return RailSet.fromDoc(markTypes, newState.doc);
+	                }
+	                const rs2 = rs
+	                    .map(tr.mapping.map.bind(tr.mapping))
+	                    .updateSelection(newState.selection.from, newState.selection.to);
+	                const toggle = tr.getMeta("TOGGLE");
+	                return toggle ? rs2.toggle(toggle.railName, toggle.type) : rs2;
 	            }
-	            const rs2 = rs
-	                .map(tr.mapping.map.bind(tr.mapping))
-	                .updateSelection(newState.selection.from, newState.selection.to);
-	            const toggle = tr.getMeta("TOGGLE");
-	            return toggle ? rs2.toggle(toggle.railName, toggle.type) : rs2;
-	        }
-	    },
-	    appendTransaction: function (trs, oldState, newState) {
-	        const rs = this.getState(newState);
-	        const { cursor } = rs;
-	        const { tr } = newState;
-	        if (!trs.some(tr => tr.getMeta(historyPlugin)) &&
-	            !trs.some(tr => tr.getMeta("paste")) &&
-	            cursor !== null &&
-	            cursor !== newState.selection.from) {
-	            tr.setSelection(dist_3$2.near(newState.doc.resolve(cursor)));
-	        }
-	        // Currently there is 0 diffing but it probably wouldn't be too hard
-	        // using Range#eq and the prev range
-	        if (trs.some(tr => tr.docChanged || tr.getMeta("TOGGLE"))) {
-	            const { from, to } = new dist_5$2(newState.doc);
-	            Object.entries(rs.rails).forEach(([railName, rail]) => {
-	                const markType = markTypes[railName];
-	                tr.removeMark(from, to, markType);
-	                rail.ranges.forEach(range => {
-	                    tr.addMark(range.from, range.to, markType.create({ id: range.id, type: range.type }));
+	        },
+	        appendTransaction: function (trs, oldState, newState) {
+	            const rs = this.getState(newState);
+	            const { cursor } = rs;
+	            const { tr } = newState;
+	            if (!trs.some(tr => tr.getMeta(historyPlugin)) &&
+	                !trs.some(tr => tr.getMeta("paste")) &&
+	                cursor !== null &&
+	                cursor !== newState.selection.from) {
+	                tr.setSelection(dist_3$2.near(newState.doc.resolve(cursor)));
+	            }
+	            // Currently there is 0 diffing but it probably wouldn't be too hard
+	            // using Range#eq and the prev range
+	            if (trs.some(tr => tr.docChanged || tr.getMeta("TOGGLE"))) {
+	                const { from, to } = new dist_5$2(newState.doc);
+	                Object.entries(rs.rails).forEach(([railName, rail]) => {
+	                    const markType = markTypes[railName];
+	                    tr.removeMark(from, to, markType);
+	                    rail.ranges.forEach(range => {
+	                        tr.addMark(range.from, range.to, markType.create({ id: range.id, type: range.type }));
+	                    });
 	                });
-	            });
+	            }
+	            if (tr.docChanged || tr.selectionSet) {
+	                return tr;
+	            }
+	        },
+	        props: {
+	            transformPasted: transformPasted(Object.values(markTypes)),
+	            decorations: function (state) {
+	                const rs = this.getState(state);
+	                return dist_3$3.create(state.doc, Object.entries(rs.rails).reduce((acc1, [railName, rail]) => [
+	                    ...acc1,
+	                    ...rail.ranges.reduce((acc2, { from, to, id, type }) => [
+	                        ...acc2,
+	                        createEndDeco(from, "start", type, id, rs.cursor, rs.cursorBias, railNames.indexOf(railName)),
+	                        createEndDeco(to, "end", type, id, rs.cursor, rs.cursorBias, railNames.indexOf(railName))
+	                    ], [])
+	                ], []));
+	            }
 	        }
-	        if (tr.docChanged || tr.selectionSet) {
-	            return tr;
-	        }
-	    },
-	    props: {
-	        transformPasted: transformPasted(Object.values(markTypes)),
-	        decorations: function (state) {
-	            const rs = this.getState(state);
-	            return dist_3$3.create(state.doc, rs.ranges.reduce((acc, { from, to, id, type }) => [
-	                ...acc,
-	                createEndDeco(from, "start", type, id, rs.cursor, rs.cursorBias),
-	                createEndDeco(to, "end", type, id, rs.cursor, rs.cursorBias)
-	            ], []));
-	        }
-	    }
-	});
-	//# sourceMappingURL=plugin.js.map
+	    });
+	};
 
 	// could create this when the plugin is created to make an accurate type for railName
 	const toggle = (railName, type) => (state, dispatch) => dispatch(state.tr.setMeta("TOGGLE", { railName, type }));
