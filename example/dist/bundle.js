@@ -3568,7 +3568,7 @@
 	exports.ContentMatch = ContentMatch;
 	exports.DOMParser = DOMParser;
 	exports.DOMSerializer = DOMSerializer;
-
+	//# sourceMappingURL=index.js.map
 	});
 
 	unwrapExports(dist);
@@ -5314,7 +5314,7 @@
 	exports.ReplaceStep = ReplaceStep;
 	exports.ReplaceAroundStep = ReplaceAroundStep;
 	exports.replaceStep = replaceStep;
-
+	//# sourceMappingURL=index.js.map
 	});
 
 	unwrapExports(dist$1);
@@ -6479,7 +6479,7 @@
 	exports.EditorState = EditorState;
 	exports.Plugin = Plugin;
 	exports.PluginKey = PluginKey;
-
+	//# sourceMappingURL=index.js.map
 	});
 
 	unwrapExports(dist$2);
@@ -11375,7 +11375,7 @@
 	exports.DecorationSet = DecorationSet;
 	exports.__serializeForClipboard = serializeForClipboard;
 	exports.__parseFromClipboard = parseFromClipboard;
-
+	//# sourceMappingURL=index.js.map
 	});
 
 	unwrapExports(dist$3);
@@ -11547,7 +11547,7 @@
 	exports.nodes = nodes;
 	exports.marks = marks;
 	exports.schema = schema;
-
+	//# sourceMappingURL=schema-basic.js.map
 	});
 
 	unwrapExports(schemaBasic);
@@ -11810,7 +11810,7 @@
 	exports.splitListItem = splitListItem;
 	exports.liftListItem = liftListItem;
 	exports.sinkListItem = sinkListItem;
-
+	//# sourceMappingURL=schema-list.js.map
 	});
 
 	unwrapExports(schemaList);
@@ -12052,7 +12052,7 @@
 
 	exports.keymap = keymap;
 	exports.keydownHandler = keydownHandler;
-
+	//# sourceMappingURL=keymap.js.map
 	});
 
 	unwrapExports(keymap_1);
@@ -12721,7 +12721,7 @@
 	exports.redo = redo;
 	exports.undoDepth = undoDepth;
 	exports.redoDepth = redoDepth;
-
+	//# sourceMappingURL=history.js.map
 	});
 
 	unwrapExports(history_1);
@@ -13396,7 +13396,7 @@
 	exports.pcBaseKeymap = pcBaseKeymap;
 	exports.macBaseKeymap = macBaseKeymap;
 	exports.baseKeymap = baseKeymap;
-
+	//# sourceMappingURL=commands.js.map
 	});
 
 	unwrapExports(commands);
@@ -13547,7 +13547,7 @@
 	};
 
 	exports.dropCursor = dropCursor;
-
+	//# sourceMappingURL=dropcursor.js.map
 	});
 
 	unwrapExports(dropcursor);
@@ -13745,7 +13745,7 @@
 
 	exports.gapCursor = gapCursor;
 	exports.GapCursor = GapCursor;
-
+	//# sourceMappingURL=index.js.map
 	});
 
 	unwrapExports(dist$5);
@@ -14590,7 +14590,7 @@
 	exports.wrapItem = wrapItem;
 	exports.blockTypeItem = blockTypeItem;
 	exports.menuBar = menuBar;
-
+	//# sourceMappingURL=index.js.map
 	});
 
 	unwrapExports(dist$6);
@@ -14782,7 +14782,7 @@
 	exports.smartQuotes = smartQuotes;
 	exports.wrappingInputRule = wrappingInputRule;
 	exports.textblockTypeInputRule = textblockTypeInputRule;
-
+	//# sourceMappingURL=index.js.map
 	});
 
 	unwrapExports(dist$7);
@@ -15427,7 +15427,7 @@
 	exports.buildKeymap = buildKeymap;
 	exports.buildInputRules = buildInputRules;
 	exports.exampleSetup = exampleSetup;
-
+	//# sourceMappingURL=index.js.map
 	});
 
 	unwrapExports(dist$8);
@@ -15577,6 +15577,7 @@
 	        return new Range(id, this.from, this.to, this.type);
 	    }
 	}
+	//# sourceMappingURL=range.js.map
 
 	const MoveTypes = {
 	    IN: 0,
@@ -15584,6 +15585,7 @@
 	    BETWEEN: 2,
 	    NONE: 3
 	};
+	//# sourceMappingURL=contants.js.map
 
 	const notEmpty = (value) => value !== null && value !== undefined;
 	class Rail {
@@ -15723,6 +15725,7 @@
 	        return (this.count && this.reduce((max, { to }) => Math.max(max, to), -Infinity));
 	    }
 	}
+	//# sourceMappingURL=rail.js.map
 
 	const readRangesFromDoc = (doc, markType, min, max) => {
 	    const ranges = {};
@@ -15817,6 +15820,7 @@
 	};
 	// markTypes can either be a MarkType or MarkType[]
 	const sanitizeFragment = (frag, markTypes, replaceAllIds, createId) => markTypes.reduce((nextFrag, markType) => sanitizeFragmentInner(nextFrag, markType, replaceAllIds, createId), frag);
+	//# sourceMappingURL=state.js.map
 
 	const getCursor = (from, to) => (from === to ? from : null);
 	// handles cursoring through the ends of ranges and into other ranges
@@ -15969,6 +15973,7 @@
 	        return new RailSet(this.rails, this.from, this.to, this.cursorBias, null);
 	    }
 	}
+	//# sourceMappingURL=rail-set.js.map
 
 	const createEndDeco = (pos, side, type, id, cursor, bias, railIndex, isPlaceholder = false) => {
 	    const span = document.createElement("span");
@@ -16000,8 +16005,10 @@
 	            : [])
 	    ]);
 	};
+	//# sourceMappingURL=decoration.js.map
 
 	const transformPasted = (markTypes) => ({ content, openStart, openEnd }) => new dist_5(sanitizeFragment(content, Object.values(markTypes), true), openStart, openEnd);
+	//# sourceMappingURL=transform-pasted.js.map
 
 	const transactionShouldSetSelection = (cursor, trs, state, historyPlugin) => !trs.some(tr => tr.getMeta(historyPlugin) || tr.getMeta("paste")) &&
 	    cursor !== state.selection.from;
@@ -16032,6 +16039,7 @@
 	        return tr;
 	    }
 	};
+	//# sourceMappingURL=transaction.js.map
 
 	// TODO: allow generics for railName, meta (once added) etc.
 	const ranges = (markTypes, historyPlugin, getId) => new dist_8$2({
@@ -16052,9 +16060,11 @@
 	        }
 	    }
 	});
+	//# sourceMappingURL=plugin.js.map
 
 	// could create this when the plugin is created to make an accurate type for railName
 	const toggle = (railName, type) => (state, dispatch) => dispatch(state.tr.setMeta("TOGGLE", { railName, type }));
+	//# sourceMappingURL=command.js.map
 
 	const addRangeMark = (marks, { markName, typeTagMap }) => marks.append({
 	    [markName]: {
@@ -16080,6 +16090,9 @@
 	    }
 	});
 	const addRangeMarks = (marks, rangeMarkSpecs) => rangeMarkSpecs.reduce((marks, rangeMarkSpec) => addRangeMark(marks, rangeMarkSpec), orderedmap.from(marks || {}));
+	//# sourceMappingURL=schema.js.map
+
+	//# sourceMappingURL=index.js.map
 
 	const FLAG_MARK_NAME = "flag";
 	const FLAG_RAIL_NAME = "flag";
@@ -16122,21 +16135,16 @@
 	            ]
 	        })
 	    });
+	    const toggleFlag = toggle(FLAG_RAIL_NAME, "flag");
+	    const toggleCorrect = toggle(FLAG_RAIL_NAME, "correct");
+	    const toggleNote = toggle(NOTE_RAIL_NAME, "note");
+	    const keyMap = {
+	        118: toggleFlag,
+	        119: toggleCorrect,
+	        121: toggleNote
+	    };
 	    window.addEventListener("keydown", e => {
-	        switch (e.keyCode) {
-	            case 118: {
-	                toggle(FLAG_RAIL_NAME, "flag")(view.state, view.dispatch);
-	                break;
-	            }
-	            case 119: {
-	                toggle(FLAG_RAIL_NAME, "correct")(view.state, view.dispatch);
-	                break;
-	            }
-	            case 121: {
-	                toggle(NOTE_RAIL_NAME, "note")(view.state, view.dispatch);
-	                break;
-	            }
-	        }
+	        (keyMap[e.keyCode] || (() => { }))(view.state, view.dispatch);
 	    });
 	}
 

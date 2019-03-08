@@ -62,20 +62,19 @@ if (editor && content) {
     })
   });
 
+  const toggleFlag = toggle(FLAG_RAIL_NAME, "flag");
+  const toggleCorrect = toggle(FLAG_RAIL_NAME, "correct");
+  const toggleNote = toggle(NOTE_RAIL_NAME, "note");
+
+  type Command = (state: EditorState, dispatch: EditorView["dispatch"]) => void;
+
+  const keyMap: { [keyCode: string]: Command } = {
+    118: toggleFlag,
+    119: toggleCorrect,
+    121: toggleNote
+  };
+
   window.addEventListener("keydown", e => {
-    switch (e.keyCode) {
-      case 118: {
-        toggle(FLAG_RAIL_NAME, "flag")(view.state, view.dispatch);
-        break;
-      }
-      case 119: {
-        toggle(FLAG_RAIL_NAME, "correct")(view.state, view.dispatch);
-        break;
-      }
-      case 121: {
-        toggle(NOTE_RAIL_NAME, "note")(view.state, view.dispatch);
-        break;
-      }
-    }
+    (keyMap[e.keyCode] || (() => {}))(view.state, view.dispatch);
   });
 }
