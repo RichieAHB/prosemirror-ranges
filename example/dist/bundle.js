@@ -15889,6 +15889,13 @@
 	        // this is cacheable if needs be
 	        return this.allRails.reduce((ranges, rail) => [...ranges, ...rail.ranges], []);
 	    }
+	    get cursorAtBoundary() {
+	        const { cursor } = this;
+	        return cursor &&
+	            this.ranges.some(({ from, to }) => from === cursor || to === cursor)
+	            ? cursor
+	            : null;
+	    }
 	    /* Private */
 	    // should not use constructor in order to avoid incorrect `cursorBias` values
 	    constructor(rails, from, to, cursorBias = 0, placeholder) {
@@ -15989,10 +15996,10 @@
 	    createEndDeco(range.from, "start", range.type, range.id, rs.cursor, rs.cursorBias, railNames.indexOf(railName)),
 	    createEndDeco(range.to, "end", range.type, range.id, rs.cursor, rs.cursorBias, railNames.indexOf(railName))
 	];
-	const createRailSetDecos = (rs, state) => {
+	const createRailSetEndDecos = (rs) => {
 	    const railNames = Object.keys(rs.rails);
 	    const { placeholderSpec } = rs;
-	    return dist_3$3.create(state.doc, [
+	    return [
 	        ...Object.entries(rs.rails).reduce((acc1, [railName, rail]) => [
 	            ...acc1,
 	            ...rail.ranges.reduce((acc2, range) => [
@@ -16003,7 +16010,22 @@
 	        ...(placeholderSpec
 	            ? createRangeDecos(railNames, placeholderSpec[0], placeholderSpec[1], rs)
 	            : [])
-	    ]);
+	    ];
+	};
+	const createCursorDeco = (pos, bias) => {
+	    const span = document.createElement("span");
+	    span.classList.add("cursor");
+	    return dist_2$3.widget(pos, span, {
+	        key: "cursor",
+	        side: bias,
+	        marks: []
+	    });
+	};
+	const createRailSetCursorDecos = (rs) => {
+	    const boundaryPos = rs.cursorAtBoundary;
+	    return boundaryPos !== null
+	        ? [createCursorDeco(boundaryPos, rs.cursorBias * (rs.allRails.length + 1))]
+	        : [];
 	};
 	//# sourceMappingURL=decoration.js.map
 
@@ -16055,8 +16077,16 @@
 	    },
 	    props: {
 	        transformPasted: transformPasted(Object.values(markTypes)),
+	        attributes: function (state) {
+	            const rs = this.getState(state);
+	            return rs.cursorAtBoundary !== null ? { class: "hide-selection" } : {};
+	        },
 	        decorations: function (state) {
-	            return createRailSetDecos(this.getState(state), state);
+	            const rs = this.getState(state);
+	            return dist_3$3.create(state.doc, [
+	                ...createRailSetEndDecos(rs),
+	                ...createRailSetCursorDecos(rs)
+	            ]);
 	        }
 	    }
 	});
@@ -16147,5 +16177,6 @@
 	        (keyMap[e.keyCode] || (() => { }))(view.state, view.dispatch);
 	    });
 	}
+	//# sourceMappingURL=index.js.map
 
 }());

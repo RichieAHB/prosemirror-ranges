@@ -129,6 +129,14 @@ class RailSet {
     );
   }
 
+  get cursorAtBoundary() {
+    const { cursor } = this;
+    return cursor &&
+      this.ranges.some(({ from, to }) => from === cursor || to === cursor)
+      ? cursor
+      : null;
+  }
+
   /* Private */
 
   // should not use constructor in order to avoid incorrect `cursorBias` values

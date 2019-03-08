@@ -1,7 +1,6 @@
-import { Decoration, DecorationSet } from "prosemirror-view";
+import { Decoration } from "prosemirror-view";
 import { RailSet } from "../rail-set";
 import { Range } from "../range";
-import { EditorState } from "prosemirror-state";
 
 const createEndDeco = (
   pos: number,
@@ -49,10 +48,10 @@ const createRangeDecos = (
   )
 ];
 
-const createRailSetDecos = (rs: RailSet, state: EditorState) => {
+const createRailSetEndDecos = (rs: RailSet) => {
   const railNames = Object.keys(rs.rails);
   const { placeholderSpec } = rs;
-  return DecorationSet.create(state.doc, [
+  return [
     ...Object.entries(rs.rails).reduce(
       (acc1, [railName, rail]) => [
         ...acc1,
@@ -69,7 +68,24 @@ const createRailSetDecos = (rs: RailSet, state: EditorState) => {
     ...(placeholderSpec
       ? createRangeDecos(railNames, placeholderSpec[0], placeholderSpec[1], rs)
       : [])
-  ]);
+  ];
 };
 
-export { createRailSetDecos };
+const createCursorDeco = (pos: number, bias: number) => {
+  const span = document.createElement("span");
+  span.classList.add("cursor");
+  return Decoration.widget(pos, span, {
+    key: "cursor",
+    side: bias,
+    marks: []
+  });
+};
+
+const createRailSetCursorDecos = (rs: RailSet) => {
+  const boundaryPos = rs.cursorAtBoundary;
+  return boundaryPos !== null
+    ? [createCursorDeco(boundaryPos, rs.cursorBias * (rs.allRails.length + 1))]
+    : [];
+};
+
+export { createRailSetEndDecos, createRailSetCursorDecos };

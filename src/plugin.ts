@@ -1,8 +1,12 @@
 import { Plugin } from "prosemirror-state";
 import { RailSet, RailMarkTypeMap } from "./rail-set";
-import { createRailSetDecos } from "./utils/decoration";
+import {
+  createRailSetEndDecos,
+  createRailSetCursorDecos
+} from "./utils/decoration";
 import { transformPasted } from "./utils/transform-pasted";
 import { maybeAppendTransaction } from "./utils/transaction";
+import { DecorationSet } from "prosemirror-view";
 
 type State = RailSet;
 
@@ -38,8 +42,19 @@ const ranges = (
     },
     props: {
       transformPasted: transformPasted(Object.values(markTypes)),
+      attributes: function(
+        this: Plugin<State>,
+        state
+      ): { [attr: string]: string } {
+        const rs = this.getState(state);
+        return rs.cursorAtBoundary !== null ? { class: "hide-selection" } : {};
+      },
       decorations: function(this: Plugin<State>, state) {
-        return createRailSetDecos(this.getState(state), state);
+        const rs = this.getState(state);
+        return DecorationSet.create(state.doc, [
+          ...createRailSetEndDecos(rs),
+          ...createRailSetCursorDecos(rs)
+        ]);
       }
     }
   });

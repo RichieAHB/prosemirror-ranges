@@ -7,6 +7,26 @@
   <link rel="stylesheet" href="https://prosemirror.net/css/editor.css">
   <title>Document</title>
   <style>
+    /* Add these styles to dist */
+  .hide-selection *::selection { background: transparent; }
+  .hide-selection *::-moz-selection { background: transparent; }
+  .hide-selection { caret-color: transparent; }
+  .cursor {
+    animation: 1s cursor-blink step-end infinite;
+    margin-left: -1px;
+    padding-left: 1px;
+  }
+
+  @keyframes cursor-blink {
+    from, to {
+      background-color: black;
+    }
+    50% {
+      background-color: transparent;
+    }
+  }
+  </style>
+  <style>
   gu-note {
     background-color: rgba(0, 255, 255, 0.25);
     box-shadow: inset 0 1px 0 0 darkcyan, inset 0 -1px 0 0 darkcyan;
@@ -26,8 +46,16 @@
   }
 
   .end {
-    padding: 0 2px;
+    padding: 0 4px;
     vertical-align: bottom;
+  }
+
+  .end--start {
+    margin-left: 1px;
+  }
+
+  .end--end {
+    margin-right: 1px;
   }
 
   .end--note {
