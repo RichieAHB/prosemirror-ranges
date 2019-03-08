@@ -77,6 +77,7 @@ class Rail {
   }
 
   getMoveType(pos: number, dir: number, cursorBias: number) {
+    // const wasBackSpace = dir === -1 && this.rangeAt(pos + dir, cursorBias)
     const isInside = this.rangeAt(pos, cursorBias);
     const willBeInside = this.rangeAt(pos, dir);
     const canBeBetween =

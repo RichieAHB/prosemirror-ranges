@@ -30,6 +30,7 @@ const ranges = (
           tr.mapping.map.bind(tr.mapping),
           tr.selection.from,
           tr.selection.to,
+          tr.docChanged,
           tr.getMeta(TOGGLE_KEY)
         )
     },

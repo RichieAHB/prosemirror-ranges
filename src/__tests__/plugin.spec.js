@@ -437,9 +437,9 @@ describe("Noter Plugin", () => {
 
     describe("can handle backspacing from inside", () =>
       testDoUndoRedo(
-        doc(p("foo", note({ id: 1 }, "b<a>ar"), "more")),
-        s => s.backspace(2),
-        doc(p("fo", note({ id: 1 }, "ar"), "more"))
+        doc(p("foo", note({ id: 1 }, "ba<a>r"), "more")),
+        s => s.backspace(3),
+        doc(p("fo", note({ id: 1 }, "r"), "more"))
       ));
 
     describe("can handle backspacing from behind", () =>

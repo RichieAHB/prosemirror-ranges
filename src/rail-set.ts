@@ -43,7 +43,7 @@ class RailSet {
         (railSet, [name, rail]) => railSet.setRail(name, rail),
         RailSet.empty(-Infinity)
       )
-      .updateSelection(from, to);
+      .updateSelection(from, to, true);
   }
 
   handleUpdate(
@@ -51,18 +51,19 @@ class RailSet {
     mapper: (pos: number, bias: number) => number,
     from: number,
     to: number,
+    docChanged: boolean,
     toggle?: { railName: string; type: string }
   ) {
     if (rebuildSpec) {
       return RailSet.fromDoc(rebuildSpec.markTypes, rebuildSpec.doc);
     }
-    const rs = this.map(mapper).updateSelection(from, to);
+    const rs = this.map(mapper).updateSelection(from, to, docChanged);
     return toggle ? rs.toggle(toggle.railName, toggle.type) : rs;
   }
 
   // convenience for tests
-  updateCursor(pos: number) {
-    return this.updateSelection(pos, pos);
+  updateCursor(pos: number, docChanged = false) {
+    return this.updateSelection(pos, pos, docChanged);
   }
 
   get cursor() {
@@ -200,7 +201,7 @@ class RailSet {
     );
   }
 
-  updateSelection(from: number, to: number) {
+  updateSelection(from: number, to: number, docChanged: boolean) {
     if (this.from === from && this.to === to) {
       return this;
     }
@@ -210,12 +211,25 @@ class RailSet {
       // we're got a selection and not a cursor
       return new RailSet(this.rails, from, to, 0, null);
     }
-    const { pos, bias } = this.getNextCursorSpec(prevCursor, cursor);
+    const { pos, bias } = this.getNextCursorSpec(
+      prevCursor,
+      cursor,
+      docChanged
+    );
     return new RailSet(this.rails, pos, pos, bias, null);
   }
 
-  getNextCursorSpec(pos: number, candidatePos: number) {
+  getNextCursorSpec(pos: number, candidatePos: number, docChanged: boolean) {
     const { cursorBias } = this;
+
+    // if the doc has changed while we're moving assuming it's an insert / delete and keep everything the same
+    if (docChanged) {
+      return {
+        pos: candidatePos,
+        bias: cursorBias
+      };
+    }
+
     const offset = candidatePos - pos;
 
     // if this isn't a nudge then always bias to outside
