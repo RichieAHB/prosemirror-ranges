@@ -1,6 +1,7 @@
 import { Decoration } from "prosemirror-view";
 import { RailSet } from "../rail-set";
 import { Range } from "../range";
+import { namespaceClass as ns } from "./classes";
 
 const createEndDeco = (
   pos: number,
@@ -13,7 +14,8 @@ const createEndDeco = (
   isPlaceholder = false
 ) => {
   const span = document.createElement("span");
-  span.classList.add("end", `end--${side}`, `end--${type}`);
+  const prefix = ns("end");
+  span.classList.add(prefix, `${prefix}--${side}`, `${prefix}--${type}`);
   const sideBias = (side === "start" ? 1 : -1) * (isPlaceholder ? -0.1 : 1);
   return Decoration.widget(pos, span, {
     key: `${side}:${id}:${cursor === pos ? bias : ""}`,
@@ -73,7 +75,7 @@ const createRailSetEndDecos = (rs: RailSet) => {
 
 const createCursorDeco = (pos: number, bias: number) => {
   const span = document.createElement("span");
-  span.classList.add("cursor");
+  span.classList.add(ns("cursor"));
   return Decoration.widget(pos, span, {
     key: "cursor",
     side: bias,

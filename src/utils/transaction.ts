@@ -7,6 +7,7 @@ import {
   PluginKey
 } from "prosemirror-state";
 import { RailMarkTypeMap, RailSet } from "../rail-set";
+import { TOGGLE_KEY } from "./command";
 
 const transactionShouldSetSelection = (
   cursor: number,
@@ -18,7 +19,7 @@ const transactionShouldSetSelection = (
   cursor !== state.selection.from;
 
 const transactionShouldRebuildMarks = (trs: Transaction[]) =>
-  trs.some(tr => tr.docChanged || tr.getMeta("TOGGLE"));
+  trs.some(tr => tr.docChanged || tr.getMeta(TOGGLE_KEY));
 
 // Currently there is zero diffing but it probably wouldn't be too hard
 // using Range#eq and the prev range

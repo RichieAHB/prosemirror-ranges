@@ -3568,7 +3568,7 @@
 	exports.ContentMatch = ContentMatch;
 	exports.DOMParser = DOMParser;
 	exports.DOMSerializer = DOMSerializer;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist);
@@ -5314,7 +5314,7 @@
 	exports.ReplaceStep = ReplaceStep;
 	exports.ReplaceAroundStep = ReplaceAroundStep;
 	exports.replaceStep = replaceStep;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$1);
@@ -6479,7 +6479,7 @@
 	exports.EditorState = EditorState;
 	exports.Plugin = Plugin;
 	exports.PluginKey = PluginKey;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$2);
@@ -11375,7 +11375,7 @@
 	exports.DecorationSet = DecorationSet;
 	exports.__serializeForClipboard = serializeForClipboard;
 	exports.__parseFromClipboard = parseFromClipboard;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$3);
@@ -11547,7 +11547,7 @@
 	exports.nodes = nodes;
 	exports.marks = marks;
 	exports.schema = schema;
-	//# sourceMappingURL=schema-basic.js.map
+
 	});
 
 	unwrapExports(schemaBasic);
@@ -11810,7 +11810,7 @@
 	exports.splitListItem = splitListItem;
 	exports.liftListItem = liftListItem;
 	exports.sinkListItem = sinkListItem;
-	//# sourceMappingURL=schema-list.js.map
+
 	});
 
 	unwrapExports(schemaList);
@@ -12052,7 +12052,7 @@
 
 	exports.keymap = keymap;
 	exports.keydownHandler = keydownHandler;
-	//# sourceMappingURL=keymap.js.map
+
 	});
 
 	unwrapExports(keymap_1);
@@ -12721,7 +12721,7 @@
 	exports.redo = redo;
 	exports.undoDepth = undoDepth;
 	exports.redoDepth = redoDepth;
-	//# sourceMappingURL=history.js.map
+
 	});
 
 	unwrapExports(history_1);
@@ -13396,7 +13396,7 @@
 	exports.pcBaseKeymap = pcBaseKeymap;
 	exports.macBaseKeymap = macBaseKeymap;
 	exports.baseKeymap = baseKeymap;
-	//# sourceMappingURL=commands.js.map
+
 	});
 
 	unwrapExports(commands);
@@ -13547,7 +13547,7 @@
 	};
 
 	exports.dropCursor = dropCursor;
-	//# sourceMappingURL=dropcursor.js.map
+
 	});
 
 	unwrapExports(dropcursor);
@@ -13745,7 +13745,7 @@
 
 	exports.gapCursor = gapCursor;
 	exports.GapCursor = GapCursor;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$5);
@@ -14590,7 +14590,7 @@
 	exports.wrapItem = wrapItem;
 	exports.blockTypeItem = blockTypeItem;
 	exports.menuBar = menuBar;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$6);
@@ -14782,7 +14782,7 @@
 	exports.smartQuotes = smartQuotes;
 	exports.wrappingInputRule = wrappingInputRule;
 	exports.textblockTypeInputRule = textblockTypeInputRule;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$7);
@@ -15427,7 +15427,7 @@
 	exports.buildKeymap = buildKeymap;
 	exports.buildInputRules = buildInputRules;
 	exports.exampleSetup = exampleSetup;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$8);
@@ -15577,7 +15577,6 @@
 	        return new Range(id, this.from, this.to, this.type);
 	    }
 	}
-	//# sourceMappingURL=range.js.map
 
 	const MoveTypes = {
 	    IN: 0,
@@ -15585,7 +15584,6 @@
 	    BETWEEN: 2,
 	    NONE: 3
 	};
-	//# sourceMappingURL=contants.js.map
 
 	const notEmpty = (value) => value !== null && value !== undefined;
 	class Rail {
@@ -15725,7 +15723,6 @@
 	        return (this.count && this.reduce((max, { to }) => Math.max(max, to), -Infinity));
 	    }
 	}
-	//# sourceMappingURL=rail.js.map
 
 	const readRangesFromDoc = (doc, markType, min, max) => {
 	    const ranges = {};
@@ -15820,7 +15817,6 @@
 	};
 	// markTypes can either be a MarkType or MarkType[]
 	const sanitizeFragment = (frag, markTypes, replaceAllIds, createId) => markTypes.reduce((nextFrag, markType) => sanitizeFragmentInner(nextFrag, markType, replaceAllIds, createId), frag);
-	//# sourceMappingURL=state.js.map
 
 	const getCursor = (from, to) => (from === to ? from : null);
 	// handles cursoring through the ends of ranges and into other ranges
@@ -15980,11 +15976,14 @@
 	        return new RailSet(this.rails, this.from, this.to, this.cursorBias, null);
 	    }
 	}
-	//# sourceMappingURL=rail-set.js.map
+
+	const CLASS_NAMESPACE = 'ranges-';
+	const namespaceClass = (className) => `${CLASS_NAMESPACE}${className}`;
 
 	const createEndDeco = (pos, side, type, id, cursor, bias, railIndex, isPlaceholder = false) => {
 	    const span = document.createElement("span");
-	    span.classList.add("end", `end--${side}`, `end--${type}`);
+	    const prefix = namespaceClass("end");
+	    span.classList.add(prefix, `${prefix}--${side}`, `${prefix}--${type}`);
 	    const sideBias = (side === "start" ? 1 : -1) * (isPlaceholder ? -0.1 : 1);
 	    return dist_2$3.widget(pos, span, {
 	        key: `${side}:${id}:${cursor === pos ? bias : ""}`,
@@ -16014,7 +16013,7 @@
 	};
 	const createCursorDeco = (pos, bias) => {
 	    const span = document.createElement("span");
-	    span.classList.add("cursor");
+	    span.classList.add(namespaceClass("cursor"));
 	    return dist_2$3.widget(pos, span, {
 	        key: "cursor",
 	        side: bias,
@@ -16027,14 +16026,16 @@
 	        ? [createCursorDeco(boundaryPos, rs.cursorBias * (rs.allRails.length + 1))]
 	        : [];
 	};
-	//# sourceMappingURL=decoration.js.map
 
 	const transformPasted = (markTypes) => ({ content, openStart, openEnd }) => new dist_5(sanitizeFragment(content, Object.values(markTypes), true), openStart, openEnd);
-	//# sourceMappingURL=transform-pasted.js.map
+
+	const TOGGLE_KEY = "@RANGES-TOGGLE@";
+	// could create this when the plugin is created to make an accurate type for railName
+	const toggle = (railName, type) => (state, dispatch) => dispatch(state.tr.setMeta(TOGGLE_KEY, { railName, type }));
 
 	const transactionShouldSetSelection = (cursor, trs, state, historyPlugin) => !trs.some(tr => tr.getMeta(historyPlugin) || tr.getMeta("paste")) &&
 	    cursor !== state.selection.from;
-	const transactionShouldRebuildMarks = (trs) => trs.some(tr => tr.docChanged || tr.getMeta("TOGGLE"));
+	const transactionShouldRebuildMarks = (trs) => trs.some(tr => tr.docChanged || tr.getMeta(TOGGLE_KEY));
 	// Currently there is zero diffing but it probably wouldn't be too hard
 	// using Range#eq and the prev range
 	const rebuildRailMarks = (markTypes, tr, rs) => {
@@ -16061,7 +16062,6 @@
 	        return tr;
 	    }
 	};
-	//# sourceMappingURL=transaction.js.map
 
 	// TODO: allow generics for railName, meta (once added) etc.
 	const ranges = (markTypes, historyPlugin, getId) => new dist_8$2({
@@ -16070,7 +16070,7 @@
 	        apply: (tr, rs) => rs.handleUpdate((tr.getMeta(historyPlugin) || tr.getMeta("paste")) && {
 	            markTypes,
 	            doc: tr.doc
-	        }, tr.mapping.map.bind(tr.mapping), tr.selection.from, tr.selection.to, tr.getMeta("TOGGLE"))
+	        }, tr.mapping.map.bind(tr.mapping), tr.selection.from, tr.selection.to, tr.getMeta(TOGGLE_KEY))
 	    },
 	    appendTransaction: function (trs, oldState, newState) {
 	        return maybeAppendTransaction(markTypes, this.getState(newState), trs, newState, historyPlugin);
@@ -16079,7 +16079,9 @@
 	        transformPasted: transformPasted(Object.values(markTypes)),
 	        attributes: function (state) {
 	            const rs = this.getState(state);
-	            return rs.cursorAtBoundary !== null ? { class: "hide-selection" } : {};
+	            return rs.cursorAtBoundary !== null
+	                ? { class: namespaceClass("hide-selection") }
+	                : {};
 	        },
 	        decorations: function (state) {
 	            const rs = this.getState(state);
@@ -16090,11 +16092,6 @@
 	        }
 	    }
 	});
-	//# sourceMappingURL=plugin.js.map
-
-	// could create this when the plugin is created to make an accurate type for railName
-	const toggle = (railName, type) => (state, dispatch) => dispatch(state.tr.setMeta("TOGGLE", { railName, type }));
-	//# sourceMappingURL=command.js.map
 
 	const addRangeMark = (marks, { markName, typeTagMap }) => marks.append({
 	    [markName]: {
@@ -16120,9 +16117,6 @@
 	    }
 	});
 	const addRangeMarks = (marks, rangeMarkSpecs) => rangeMarkSpecs.reduce((marks, rangeMarkSpec) => addRangeMark(marks, rangeMarkSpec), orderedmap.from(marks || {}));
-	//# sourceMappingURL=schema.js.map
-
-	//# sourceMappingURL=index.js.map
 
 	const FLAG_MARK_NAME = "flag";
 	const FLAG_RAIL_NAME = "flag";
@@ -16177,6 +16171,5 @@
 	        (keyMap[e.keyCode] || (() => { }))(view.state, view.dispatch);
 	    });
 	}
-	//# sourceMappingURL=index.js.map
 
 }());

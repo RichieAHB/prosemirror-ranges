@@ -7,6 +7,8 @@ import {
 import { transformPasted } from "./utils/transform-pasted";
 import { maybeAppendTransaction } from "./utils/transaction";
 import { DecorationSet } from "prosemirror-view";
+import { TOGGLE_KEY } from "./utils/command";
+import { namespaceClass as ns } from "./utils/classes";
 
 type State = RailSet;
 
@@ -28,7 +30,7 @@ const ranges = (
           tr.mapping.map.bind(tr.mapping),
           tr.selection.from,
           tr.selection.to,
-          tr.getMeta("TOGGLE")
+          tr.getMeta(TOGGLE_KEY)
         )
     },
     appendTransaction: function(this: Plugin<State>, trs, oldState, newState) {
@@ -47,7 +49,9 @@ const ranges = (
         state
       ): { [attr: string]: string } {
         const rs = this.getState(state);
-        return rs.cursorAtBoundary !== null ? { class: "hide-selection" } : {};
+        return rs.cursorAtBoundary !== null
+          ? { class: ns("hide-selection") }
+          : {};
       },
       decorations: function(this: Plugin<State>, state) {
         const rs = this.getState(state);
