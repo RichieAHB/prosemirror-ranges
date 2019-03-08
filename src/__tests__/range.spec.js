@@ -58,24 +58,6 @@ describe("Range", () => {
     });
   });
 
-  describe("removeAfter", () => {
-    it("truncates a range to before pos", () => {
-      const r1 = new Range("id", 2, 8);
-      const r2 = r1.removeAfter(6);
-      expect(r2.from).toBe(2);
-      expect(r2.to).toBe(6);
-    });
-  });
-
-  describe("removeBefore", () => {
-    it("truncates a range to after pos", () => {
-      const r1 = new Range("id", 2, 8);
-      const r2 = r1.removeBefore(6);
-      expect(r2.from).toBe(6);
-      expect(r2.to).toBe(8);
-    });
-  });
-
   describe("isEmpty", () => {
     it("is empty when from >= to", () => {
       const r1 = new Range("id", 0, -1);

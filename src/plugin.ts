@@ -22,15 +22,15 @@ const ranges = (
     state: {
       init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
       apply: (tr, rs) =>
-        rs.handleUpdate(
-          (tr.getMeta(historyPlugin) || tr.getMeta("paste")) && {
-            markTypes,
-            doc: tr.doc
-          },
+        rs.update(
           tr.mapping.map.bind(tr.mapping),
           tr.selection.from,
           tr.selection.to,
           tr.docChanged,
+          (tr.getMeta(historyPlugin) || tr.getMeta("paste")) && {
+            markTypes,
+            doc: tr.doc
+          },
           tr.getMeta(TOGGLE_KEY)
         )
     },

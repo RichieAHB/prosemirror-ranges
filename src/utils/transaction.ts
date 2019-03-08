@@ -29,7 +29,7 @@ const rebuildRailMarks = (
   rs: RailSet
 ) => {
   const { from, to } = new AllSelection(tr.doc);
-  Object.entries(rs.rails).forEach(([railName, rail]) => {
+  rs.railSpecs.forEach(([railName, rail]) => {
     const markType = markTypes[railName];
     tr.removeMark(from, to, markType);
     rail.ranges.forEach(range => {

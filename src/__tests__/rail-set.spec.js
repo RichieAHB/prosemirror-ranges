@@ -12,9 +12,10 @@ const { Range } = require("../range");
 const testCursoringForwardAndBackward = (...posSpecs) => railSet => {
   const testDirection = (specs, dir, rs1) =>
     specs.reduce((rs2, [pos, rangeIds]) => {
-      const rs3 = rs2.updateCursor(rs2.cursor + Math.sign(dir));
+      const cursor = rs2.cursor + Math.sign(dir);
+      const rs3 = rs2.update(p => p, cursor, cursor, false);
       expect(rs3.cursor).toBe(pos);
-      rs3.allRailNames.forEach(railName => {
+      Object.keys(rs3.rails).forEach(railName => {
         const rangeId = rangeIds[railName];
         if (rangeId) {
           expect(rs3.rangeAt(railName, pos).id).toBe(rangeId);

@@ -46,12 +46,12 @@ class RailSet {
       .updateSelection(from, to, true);
   }
 
-  handleUpdate(
-    rebuildSpec: { markTypes: RailMarkTypeMap; doc: Node },
+  update(
     mapper: (pos: number, bias: number) => number,
     from: number,
     to: number,
     docChanged: boolean,
+    rebuildSpec?: { markTypes: RailMarkTypeMap; doc: Node },
     toggle?: { railName: string; type: string }
   ) {
     if (rebuildSpec) {
@@ -61,17 +61,8 @@ class RailSet {
     return toggle ? rs.toggle(toggle.railName, toggle.type) : rs;
   }
 
-  // convenience for tests
-  updateCursor(pos: number, docChanged = false) {
-    return this.updateSelection(pos, pos, docChanged);
-  }
-
   get cursor() {
     return getCursor(this.from, this.to);
-  }
-
-  getRail(railName: string) {
-    return this.rails[railName];
   }
 
   // overwrite or add a rail
@@ -91,7 +82,7 @@ class RailSet {
   // insert a range
   toggle(railName: string, type: string) {
     // this expects the rail to exist already
-    const rail = this.getRail(railName);
+    const rail = this.rails[railName];
     if (!rail) {
       throw new Error(`Rail with name ${railName} not found, add it first`);
     }
@@ -109,23 +100,17 @@ class RailSet {
   }
 
   rangeAt(railName: string, pos: number) {
-    return this.getRail(railName).rangeAt(pos, this.cursorBias);
+    return this.rails[railName].rangeAt(pos, this.cursorBias);
   }
 
-  // helper for getting all of the rails without needing their keys
-  get allRails() {
-    // again could cache
-    return Object.values(this.rails);
-  }
-
-  get allRailNames() {
-    return Object.keys(this.rails);
+  get railSpecs() {
+    return Object.entries(this.rails);
   }
 
   get ranges() {
     // this is cacheable if needs be
-    return this.allRails.reduce(
-      (ranges, rail) => [...ranges, ...rail.ranges],
+    return this.railSpecs.reduce(
+      (ranges, [, rail]) => [...ranges, ...rail.ranges],
       [] as Range[]
     );
   }
@@ -138,10 +123,8 @@ class RailSet {
       : null;
   }
 
-  /* Private */
-
   // should not use constructor in order to avoid incorrect `cursorBias` values
-  constructor(
+  private constructor(
     rails: { [name: string]: Rail },
     from: number,
     to: number,
@@ -155,45 +138,14 @@ class RailSet {
     this.placeholderSpec = placeholder;
   }
 
-  map(mapper: (pos: number, bias: number) => number) {
+  private map(mapper: (pos: number, bias: number) => number) {
     // TODO: tidy
     // attempt to map the placeholder and add it,
     // it will be remove in any case where it hasn't been increased in size
-    const placeholderSpec =
-      this.placeholderSpec &&
-      ([
-        this.placeholderSpec[0],
-        this.placeholderSpec[1].map(
-          pos => mapper(pos, -1),
-          pos => mapper(pos, 1)
-        )
-      ] as [string, Range]);
+    const placeholderSpec = this.mapPlaceholder(mapper);
 
     return new RailSet(
-      Object.entries(this.rails).reduce((acc, [railName, rail]) => {
-        const rail2 = rail.map(
-          pos => mapper(pos, 0.5 - this.cursorBias),
-          pos => mapper(pos, -0.5 - this.cursorBias)
-        );
-        if (!placeholderSpec) {
-          return {
-            ...acc,
-            [railName]: rail2
-          };
-        }
-
-        const [placeholderRailName, placeholder] = placeholderSpec;
-
-        const rail3 =
-          placeholderRailName === railName
-            ? rail.add(placeholder.from, placeholder.to, placeholder.type)
-            : rail2;
-
-        return {
-          ...acc,
-          [railName]: rail3
-        };
-      }, {}),
+      this.mapRangesAndMaybeAddPlaceholder(mapper, placeholderSpec),
       this.from,
       this.to,
       this.cursorBias,
@@ -201,7 +153,7 @@ class RailSet {
     );
   }
 
-  updateSelection(from: number, to: number, docChanged: boolean) {
+  private updateSelection(from: number, to: number, docChanged: boolean) {
     if (this.from === from && this.to === to) {
       return this;
     }
@@ -219,7 +171,11 @@ class RailSet {
     return new RailSet(this.rails, pos, pos, bias, null);
   }
 
-  getNextCursorSpec(pos: number, candidatePos: number, docChanged: boolean) {
+  private getNextCursorSpec(
+    pos: number,
+    candidatePos: number,
+    docChanged: boolean
+  ) {
     const { cursorBias } = this;
 
     // if the doc has changed while we're moving assuming it's an insert / delete and keep everything the same
@@ -240,7 +196,7 @@ class RailSet {
       };
     }
 
-    const infos = this.allRails.map(r =>
+    const infos = this.railSpecs.map(([, r]) =>
       r.getMoveType(pos, offset, cursorBias)
     );
 
@@ -268,14 +224,58 @@ class RailSet {
     };
   }
 
-  addPlaceholder(railName: string, type: string) {
+  private mapPlaceholder(mapper: (pos: number, bias: number) => number) {
+    return (
+      this.placeholderSpec &&
+      ([
+        this.placeholderSpec[0],
+        this.placeholderSpec[1].map(
+          pos => mapper(pos, -1),
+          pos => mapper(pos, 1)
+        )
+      ] as [string, Range])
+    );
+  }
+
+  private mapRangesAndMaybeAddPlaceholder(
+    mapper: (pos: number, bias: number) => number,
+    newPlaceholderSpec: [string, Range] | null
+  ) {
+    return this.railSpecs.reduce((acc, [railName, rail]) => {
+      const rail2 = rail.map(
+        pos => mapper(pos, 0.5 - this.cursorBias),
+        pos => mapper(pos, -0.5 - this.cursorBias)
+      );
+
+      if (!newPlaceholderSpec) {
+        return {
+          ...acc,
+          [railName]: rail2
+        };
+      }
+
+      const [placeholderRailName, placeholder] = newPlaceholderSpec;
+
+      const rail3 =
+        placeholderRailName === railName
+          ? rail.add(placeholder.from, placeholder.to, placeholder.type)
+          : rail2;
+
+      return {
+        ...acc,
+        [railName]: rail3
+      };
+    }, {});
+  }
+
+  private addPlaceholder(railName: string, type: string) {
     return new RailSet(this.rails, this.from, this.to, 1, [
       railName,
       Range.create("placeholder", this.from, this.from, type)
     ]);
   }
 
-  removePlaceholder() {
+  private removePlaceholder() {
     return new RailSet(this.rails, this.from, this.to, this.cursorBias, null);
   }
 }

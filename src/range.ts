@@ -35,14 +35,6 @@ class Range {
     return [before, after].filter(({ isEmpty }) => !isEmpty);
   }
 
-  removeAfter(max: number) {
-    return this.map(pos => Math.min(max, pos));
-  }
-
-  removeBefore(min: number) {
-    return this.map(pos => Math.max(min, pos));
-  }
-
   eq(range: Range) {
     return (
       this.from === range.from &&
@@ -68,6 +60,14 @@ class Range {
 
   private updateId(id: string) {
     return new Range(id, this.from, this.to, this.type);
+  }
+
+  private removeAfter(max: number) {
+    return this.map(pos => Math.min(max, pos));
+  }
+
+  private removeBefore(min: number) {
+    return this.map(pos => Math.max(min, pos));
   }
 }
 

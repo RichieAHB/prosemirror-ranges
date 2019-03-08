@@ -54,7 +54,7 @@ const createRailSetEndDecos = (rs: RailSet) => {
   const railNames = Object.keys(rs.rails);
   const { placeholderSpec } = rs;
   return [
-    ...Object.entries(rs.rails).reduce(
+    ...rs.railSpecs.reduce(
       (acc1, [railName, rail]) => [
         ...acc1,
         ...rail.ranges.reduce(
@@ -86,7 +86,7 @@ const createCursorDeco = (pos: number, bias: number) => {
 const createRailSetCursorDecos = (rs: RailSet) => {
   const boundaryPos = rs.cursorAtBoundary;
   return boundaryPos !== null
-    ? [createCursorDeco(boundaryPos, rs.cursorBias * (rs.allRails.length + 1))]
+    ? [createCursorDeco(boundaryPos, rs.cursorBias * (rs.railSpecs.length + 1))]
     : [];
 };
 

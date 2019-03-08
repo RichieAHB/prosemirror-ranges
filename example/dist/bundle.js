@@ -15552,12 +15552,6 @@
 	            : this.removeBefore(max);
 	        return [before, after].filter(({ isEmpty }) => !isEmpty);
 	    }
-	    removeAfter(max) {
-	        return this.map(pos => Math.min(max, pos));
-	    }
-	    removeBefore(min) {
-	        return this.map(pos => Math.max(min, pos));
-	    }
 	    eq(range) {
 	        return (this.from === range.from &&
 	            this.to === range.to &&
@@ -15576,8 +15570,13 @@
 	    updateId(id) {
 	        return new Range(id, this.from, this.to, this.type);
 	    }
+	    removeAfter(max) {
+	        return this.map(pos => Math.min(max, pos));
+	    }
+	    removeBefore(min) {
+	        return this.map(pos => Math.max(min, pos));
+	    }
 	}
-	//# sourceMappingURL=range.js.map
 
 	const MoveTypes = {
 	    IN: 0,
@@ -15587,7 +15586,6 @@
 	};
 	//# sourceMappingURL=contants.js.map
 
-	const notEmpty = (value) => value !== null && value !== undefined;
 	class Rail {
 	    static empty(getId) {
 	        return new Rail([], getId);
@@ -15606,23 +15604,7 @@
 	    // if none of the mappings have any effect then we get the same object
 	    // reference back
 	    map(mapFrom, mapTo = mapFrom) {
-	        const { ranges, didUpdate } = this.reduce(({ ranges, didUpdate }, range) => {
-	            const range1 = range.map(mapFrom, mapTo);
-	            return {
-	                ranges: [...ranges, range1],
-	                didUpdate: didUpdate || range1 !== range
-	            };
-	        }, {
-	            ranges: [],
-	            didUpdate: false
-	        });
-	        return didUpdate ? this.update(ranges).removeEmpty() : this;
-	    }
-	    forEach(fn) {
-	        return this.ranges.forEach(fn);
-	    }
-	    reduce(fn, init) {
-	        return this.ranges.reduce(fn, init);
+	        return this.updateRanges(this.ranges.map(range => range.map(mapFrom, mapTo))).removeEmpty();
 	    }
 	    toggle(from, to, cursorBias, type) {
 	        // if the cursor bias is 0 assume that we're inside a note position
@@ -15634,7 +15616,6 @@
 	        return from === to ? this.remove([rFrom]) : this.removeSlice(from, to);
 	    }
 	    getMoveType(pos, dir, cursorBias) {
-	        // const wasBackSpace = dir === -1 && this.rangeAt(pos + dir, cursorBias)
 	        const isInside = this.rangeAt(pos, cursorBias);
 	        const willBeInside = this.rangeAt(pos, dir);
 	        const canBeBetween = cursorBias + dir === 0 &&
@@ -15652,7 +15633,6 @@
 	        }
 	        return MoveTypes.NONE;
 	    }
-	    /* Private */
 	    // Adds a new range to the rail, if we're adding a range of the same type
 	    // inside a range that is already there then nothing happens and we return the
 	    // same object reference
@@ -15670,60 +15650,52 @@
 	            id: null,
 	            to: end
 	        };
-	        return this.update([
-	            ...this.remove([this.find(from, to, 0, hasType)].filter(notEmpty)).removeSlice(from, to).ranges,
+	        return this.updateRanges([
+	            ...this.removeSlice(from, to).ranges,
 	            new Range(id || id1 || id2 || this.getId(), from, to, type)
 	        ]).removeEmpty();
 	    }
-	    // removes every range at this slice, ranges overlapping will be sliced
-	    // if nothing is removed
-	    removeSlice(from, to) {
-	        const { didUpdate, ranges } = this.reduce(({ ranges, didUpdate }, range) => {
-	            const ranges1 = range.slice(from, to, this.getId);
-	            const [r1] = ranges1;
-	            return {
-	                ranges: [...ranges, ...ranges1],
-	                didUpdate: didUpdate || r1 !== range
-	            };
-	        }, { ranges: [], didUpdate: false });
-	        return didUpdate ? this.update(ranges) : this;
+	    // removes by comparing object references, if nothing is removed then we get
+	    // the same rail reference back
+	    remove(toRemove = []) {
+	        const ranges = this.ranges.filter(range => toRemove.indexOf(range) === -1);
+	        return this.count === ranges.length ? this : this.updateRanges(ranges);
 	    }
 	    rangeAt(pos, cursorBias = 0, predicate = (range) => true) {
 	        return this.find(pos, pos, cursorBias, predicate);
+	    }
+	    get count() {
+	        return this.ranges.length;
+	    }
+	    get minPos() {
+	        return (!!this.count &&
+	            this.ranges.reduce((min, { from }) => Math.min(min, from), Infinity));
+	    }
+	    get maxPos() {
+	        return (!!this.count &&
+	            this.ranges.reduce((max, { to }) => Math.max(max, to), -Infinity));
 	    }
 	    // should not use the constructor publicly to protect against invalid overlapping
 	    constructor(ranges = [], getId = v4_1) {
 	        this.ranges = ranges;
 	        this.getId = getId;
 	    }
+	    // removes every range at this slice, ranges overlapping will be sliced
+	    // if nothing is removed
+	    removeSlice(from, to) {
+	        return this.updateRanges(this.ranges.reduce((acc, range) => [...acc, ...range.slice(from, to, this.getId)], []));
+	    }
 	    removeEmpty() {
 	        const ranges = this.ranges.filter(({ isEmpty }) => !isEmpty);
-	        return ranges.length === this.count ? this : this.update(ranges);
+	        return ranges.length === this.count ? this : this.updateRanges(ranges);
 	    }
-	    find(start = this.min, end = this.max, cursorBias = 0, predicate = (range) => true) {
-	        return this.ranges.find(range => range.touches(start, end, cursorBias) && predicate(range));
+	    find(start = this.minPos, end = this.maxPos, cursorBias = 0, predicate = (range) => true) {
+	        return (start &&
+	            end &&
+	            this.ranges.find(range => range.touches(start, end, cursorBias) && predicate(range)));
 	    }
-	    // removes by comparing object references, if nothing is removed then we get
-	    // the same rail reference back
-	    remove(toRemove = []) {
-	        const ranges = this.ranges.filter(range => toRemove.indexOf(range) === -1);
-	        return this.count === ranges.length ? this : this.update(ranges);
-	    }
-	    update(ranges, getId = this.getId) {
-	        return new Rail(ranges, getId);
-	    }
-	    get count() {
-	        return this.ranges.length;
-	    }
-	    get empty() {
-	        return this.count === 0;
-	    }
-	    get min() {
-	        return (this.count &&
-	            this.reduce((min, { from }) => Math.min(min, from), Infinity));
-	    }
-	    get max() {
-	        return (this.count && this.reduce((max, { to }) => Math.max(max, to), -Infinity));
+	    updateRanges(ranges) {
+	        return new Rail(ranges, this.getId);
 	    }
 	}
 	//# sourceMappingURL=rail.js.map
@@ -15840,22 +15812,15 @@
 	            .reduce((railSet, [name, rail]) => railSet.setRail(name, rail), RailSet.empty(-Infinity))
 	            .updateSelection(from, to, true);
 	    }
-	    handleUpdate(rebuildSpec, mapper, from, to, docChanged, toggle) {
+	    update(mapper, from, to, docChanged, rebuildSpec, toggle) {
 	        if (rebuildSpec) {
 	            return RailSet.fromDoc(rebuildSpec.markTypes, rebuildSpec.doc);
 	        }
 	        const rs = this.map(mapper).updateSelection(from, to, docChanged);
 	        return toggle ? rs.toggle(toggle.railName, toggle.type) : rs;
 	    }
-	    // convenience for tests
-	    updateCursor(pos, docChanged = false) {
-	        return this.updateSelection(pos, pos, docChanged);
-	    }
 	    get cursor() {
 	        return getCursor(this.from, this.to);
-	    }
-	    getRail(railName) {
-	        return this.rails[railName];
 	    }
 	    // overwrite or add a rail
 	    setRail(railName, rail) {
@@ -15864,7 +15829,7 @@
 	    // insert a range
 	    toggle(railName, type) {
 	        // this expects the rail to exist already
-	        const rail = this.getRail(railName);
+	        const rail = this.rails[railName];
 	        if (!rail) {
 	            throw new Error(`Rail with name ${railName} not found, add it first`);
 	        }
@@ -15876,19 +15841,14 @@
 	        return this.setRail(railName, rail.toggle(this.from, this.to, this.cursorBias, type));
 	    }
 	    rangeAt(railName, pos) {
-	        return this.getRail(railName).rangeAt(pos, this.cursorBias);
+	        return this.rails[railName].rangeAt(pos, this.cursorBias);
 	    }
-	    // helper for getting all of the rails without needing their keys
-	    get allRails() {
-	        // again could cache
-	        return Object.values(this.rails);
-	    }
-	    get allRailNames() {
-	        return Object.keys(this.rails);
+	    get railSpecs() {
+	        return Object.entries(this.rails);
 	    }
 	    get ranges() {
 	        // this is cacheable if needs be
-	        return this.allRails.reduce((ranges, rail) => [...ranges, ...rail.ranges], []);
+	        return this.railSpecs.reduce((ranges, [, rail]) => [...ranges, ...rail.ranges], []);
 	    }
 	    get cursorAtBoundary() {
 	        const { cursor } = this;
@@ -15897,7 +15857,6 @@
 	            ? cursor
 	            : null;
 	    }
-	    /* Private */
 	    // should not use constructor in order to avoid incorrect `cursorBias` values
 	    constructor(rails, from, to, cursorBias = 0, placeholder) {
 	        this.rails = rails;
@@ -15910,22 +15869,8 @@
 	        // TODO: tidy
 	        // attempt to map the placeholder and add it,
 	        // it will be remove in any case where it hasn't been increased in size
-	        const placeholderSpec = this.placeholderSpec &&
-	            [
-	                this.placeholderSpec[0],
-	                this.placeholderSpec[1].map(pos => mapper(pos, -1), pos => mapper(pos, 1))
-	            ];
-	        return new RailSet(Object.entries(this.rails).reduce((acc, [railName, rail]) => {
-	            const rail2 = rail.map(pos => mapper(pos, 0.5 - this.cursorBias), pos => mapper(pos, -0.5 - this.cursorBias));
-	            if (!placeholderSpec) {
-	                return Object.assign({}, acc, { [railName]: rail2 });
-	            }
-	            const [placeholderRailName, placeholder] = placeholderSpec;
-	            const rail3 = placeholderRailName === railName
-	                ? rail.add(placeholder.from, placeholder.to, placeholder.type)
-	                : rail2;
-	            return Object.assign({}, acc, { [railName]: rail3 });
-	        }, {}), this.from, this.to, this.cursorBias, placeholderSpec);
+	        const placeholderSpec = this.mapPlaceholder(mapper);
+	        return new RailSet(this.mapRangesAndMaybeAddPlaceholder(mapper, placeholderSpec), this.from, this.to, this.cursorBias, placeholderSpec);
 	    }
 	    updateSelection(from, to, docChanged) {
 	        if (this.from === from && this.to === to) {
@@ -15957,7 +15902,7 @@
 	                bias: 0
 	            };
 	        }
-	        const infos = this.allRails.map(r => r.getMoveType(pos, offset, cursorBias));
+	        const infos = this.railSpecs.map(([, r]) => r.getMoveType(pos, offset, cursorBias));
 	        const hasBetween = infos.includes(MoveTypes.BETWEEN);
 	        const hasIn = infos.includes(MoveTypes.IN);
 	        const hasOut = infos.includes(MoveTypes.OUT);
@@ -15977,6 +15922,26 @@
 	            pos: candidatePos,
 	            bias: -Math.sign(offset)
 	        };
+	    }
+	    mapPlaceholder(mapper) {
+	        return (this.placeholderSpec &&
+	            [
+	                this.placeholderSpec[0],
+	                this.placeholderSpec[1].map(pos => mapper(pos, -1), pos => mapper(pos, 1))
+	            ]);
+	    }
+	    mapRangesAndMaybeAddPlaceholder(mapper, newPlaceholderSpec) {
+	        return this.railSpecs.reduce((acc, [railName, rail]) => {
+	            const rail2 = rail.map(pos => mapper(pos, 0.5 - this.cursorBias), pos => mapper(pos, -0.5 - this.cursorBias));
+	            if (!newPlaceholderSpec) {
+	                return Object.assign({}, acc, { [railName]: rail2 });
+	            }
+	            const [placeholderRailName, placeholder] = newPlaceholderSpec;
+	            const rail3 = placeholderRailName === railName
+	                ? rail.add(placeholder.from, placeholder.to, placeholder.type)
+	                : rail2;
+	            return Object.assign({}, acc, { [railName]: rail3 });
+	        }, {});
 	    }
 	    addPlaceholder(railName, type) {
 	        return new RailSet(this.rails, this.from, this.to, 1, [
@@ -16013,7 +15978,7 @@
 	    const railNames = Object.keys(rs.rails);
 	    const { placeholderSpec } = rs;
 	    return [
-	        ...Object.entries(rs.rails).reduce((acc1, [railName, rail]) => [
+	        ...rs.railSpecs.reduce((acc1, [railName, rail]) => [
 	            ...acc1,
 	            ...rail.ranges.reduce((acc2, range) => [
 	                ...acc2,
@@ -16037,7 +16002,7 @@
 	const createRailSetCursorDecos = (rs) => {
 	    const boundaryPos = rs.cursorAtBoundary;
 	    return boundaryPos !== null
-	        ? [createCursorDeco(boundaryPos, rs.cursorBias * (rs.allRails.length + 1))]
+	        ? [createCursorDeco(boundaryPos, rs.cursorBias * (rs.railSpecs.length + 1))]
 	        : [];
 	};
 	//# sourceMappingURL=decoration.js.map
@@ -16057,7 +16022,7 @@
 	// using Range#eq and the prev range
 	const rebuildRailMarks = (markTypes, tr, rs) => {
 	    const { from, to } = new dist_5$2(tr.doc);
-	    Object.entries(rs.rails).forEach(([railName, rail]) => {
+	    rs.railSpecs.forEach(([railName, rail]) => {
 	        const markType = markTypes[railName];
 	        tr.removeMark(from, to, markType);
 	        rail.ranges.forEach(range => {
@@ -16085,10 +16050,10 @@
 	const ranges = (markTypes, historyPlugin, getId) => new dist_8$2({
 	    state: {
 	        init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
-	        apply: (tr, rs) => rs.handleUpdate((tr.getMeta(historyPlugin) || tr.getMeta("paste")) && {
+	        apply: (tr, rs) => rs.update(tr.mapping.map.bind(tr.mapping), tr.selection.from, tr.selection.to, tr.docChanged, (tr.getMeta(historyPlugin) || tr.getMeta("paste")) && {
 	            markTypes,
 	            doc: tr.doc
-	        }, tr.mapping.map.bind(tr.mapping), tr.selection.from, tr.selection.to, tr.docChanged, tr.getMeta(TOGGLE_KEY))
+	        }, tr.getMeta(TOGGLE_KEY))
 	    },
 	    appendTransaction: function (trs, oldState, newState) {
 	        return maybeAppendTransaction(markTypes, this.getState(newState), trs, newState, historyPlugin);

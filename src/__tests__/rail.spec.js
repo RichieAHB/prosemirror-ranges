@@ -10,7 +10,7 @@ const createRail = (...specs) => {
   );
 };
 const describeRail = rail =>
-  rail.reduce(
+  rail.ranges.reduce(
     (desc, r) => ({
       ...desc,
       [r.type]: (desc[r.type] || []).concat(r.from, r.to)
@@ -27,17 +27,17 @@ describe("Rail", () => {
     });
   });
 
-  describe("min", () => {
+  describe("minPos", () => {
     it("returns the minimum position of a range in a rail", () => {
       const rail = createRail([2, 5, "a"], [5, 10, "a"], [3, 7, "b"]);
-      expect(rail.min).toBe(2);
+      expect(rail.minPos).toBe(2);
     });
   });
 
-  describe("max", () => {
+  describe("maxPos", () => {
     it("returns the maximum position of a range in a rail", () => {
       const rail = createRail([2, 5, "a"], [5, 10, "a"], [3, 7, "b"]);
-      expect(rail.max).toBe(10);
+      expect(rail.maxPos).toBe(10);
     });
   });
 
@@ -55,8 +55,6 @@ describe("Rail", () => {
   });
 
   // describe map
-  // describe forEach
-  // describe reduce
   // describe removeSlice
   // describe rangeAt
 

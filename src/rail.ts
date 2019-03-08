@@ -9,9 +9,6 @@ type RangeSpec = {
   id: string;
 };
 
-const notEmpty = <TValue>(value: TValue | null | undefined): value is TValue =>
-  value !== null && value !== undefined;
-
 class Rail {
   readonly ranges: Range[];
   private getId: () => string;
@@ -39,29 +36,9 @@ class Rail {
   // if none of the mappings have any effect then we get the same object
   // reference back
   map(mapFrom: (pos: number) => number, mapTo = mapFrom) {
-    const { ranges, didUpdate } = this.reduce(
-      ({ ranges, didUpdate }, range) => {
-        const range1 = range.map(mapFrom, mapTo);
-        return {
-          ranges: [...ranges, range1],
-          didUpdate: didUpdate || range1 !== range
-        };
-      },
-      {
-        ranges: [] as Range[],
-        didUpdate: false
-      }
-    );
-
-    return didUpdate ? this.update(ranges).removeEmpty() : this;
-  }
-
-  forEach(fn: (range: Range, i: number, arr: Range[]) => void) {
-    return this.ranges.forEach(fn);
-  }
-
-  reduce<T>(fn: (acc: T, range: Range) => T, init: T) {
-    return this.ranges.reduce(fn, init);
+    return this.updateRanges(
+      this.ranges.map(range => range.map(mapFrom, mapTo))
+    ).removeEmpty();
   }
 
   toggle(from: number, to: number, cursorBias: number, type: string) {
@@ -77,7 +54,6 @@ class Rail {
   }
 
   getMoveType(pos: number, dir: number, cursorBias: number) {
-    // const wasBackSpace = dir === -1 && this.rangeAt(pos + dir, cursorBias)
     const isInside = this.rangeAt(pos, cursorBias);
     const willBeInside = this.rangeAt(pos, dir);
     const canBeBetween =
@@ -97,8 +73,6 @@ class Rail {
     }
     return MoveTypes.NONE;
   }
-
-  /* Private */
 
   // Adds a new range to the rail, if we're adding a range of the same type
   // inside a range that is already there then nothing happens and we return the
@@ -120,88 +94,80 @@ class Rail {
       to: end
     };
 
-    return this.update([
-      ...this.remove(
-        [this.find(from, to, 0, hasType)].filter(notEmpty)
-      ).removeSlice(from, to).ranges,
+    return this.updateRanges([
+      ...this.removeSlice(from, to).ranges,
       new Range(id || id1 || id2 || this.getId(), from, to, type)
     ]).removeEmpty();
-  }
-
-  // removes every range at this slice, ranges overlapping will be sliced
-  // if nothing is removed
-  removeSlice(from: number, to: number) {
-    const { didUpdate, ranges } = this.reduce(
-      ({ ranges, didUpdate }, range) => {
-        const ranges1 = range.slice(from, to, this.getId);
-        const [r1] = ranges1;
-        return {
-          ranges: [...ranges, ...ranges1],
-          didUpdate: didUpdate || r1 !== range
-        };
-      },
-      { ranges: [] as Range[], didUpdate: false }
-    );
-
-    return didUpdate ? this.update(ranges) : this;
-  }
-
-  rangeAt(pos: number, cursorBias = 0, predicate = (range: Range) => true) {
-    return this.find(pos, pos, cursorBias, predicate);
-  }
-
-  // should not use the constructor publicly to protect against invalid overlapping
-  constructor(ranges: Range[] = [], getId: () => string = v4) {
-    this.ranges = ranges;
-    this.getId = getId;
-  }
-
-  removeEmpty() {
-    const ranges = this.ranges.filter(({ isEmpty }) => !isEmpty);
-    return ranges.length === this.count ? this : this.update(ranges);
-  }
-
-  find(
-    start = this.min,
-    end = this.max,
-    cursorBias = 0,
-    predicate = (range: Range) => true
-  ) {
-    return this.ranges.find(
-      range => range.touches(start, end, cursorBias) && predicate(range)
-    );
   }
 
   // removes by comparing object references, if nothing is removed then we get
   // the same rail reference back
   remove(toRemove: Range[] = []) {
     const ranges = this.ranges.filter(range => toRemove.indexOf(range) === -1);
-    return this.count === ranges.length ? this : this.update(ranges);
+    return this.count === ranges.length ? this : this.updateRanges(ranges);
   }
 
-  update(ranges: Range[], getId = this.getId) {
-    return new Rail(ranges, getId);
+  rangeAt(pos: number, cursorBias = 0, predicate = (range: Range) => true) {
+    return this.find(pos, pos, cursorBias, predicate);
   }
 
   get count() {
     return this.ranges.length;
   }
 
-  get empty() {
-    return this.count === 0;
-  }
-
-  get min() {
+  get minPos() {
     return (
-      this.count &&
-      this.reduce((min, { from }) => Math.min(min, from), Infinity)
+      !!this.count &&
+      this.ranges.reduce((min, { from }) => Math.min(min, from), Infinity)
     );
   }
 
-  get max() {
+  get maxPos() {
     return (
-      this.count && this.reduce((max, { to }) => Math.max(max, to), -Infinity)
+      !!this.count &&
+      this.ranges.reduce((max, { to }) => Math.max(max, to), -Infinity)
     );
+  }
+
+  // should not use the constructor publicly to protect against invalid overlapping
+  private constructor(ranges: Range[] = [], getId: () => string = v4) {
+    this.ranges = ranges;
+    this.getId = getId;
+  }
+
+  // removes every range at this slice, ranges overlapping will be sliced
+  // if nothing is removed
+  private removeSlice(from: number, to: number) {
+    return this.updateRanges(
+      this.ranges.reduce(
+        (acc, range) => [...acc, ...range.slice(from, to, this.getId)],
+        [] as Range[]
+      )
+    );
+  }
+
+  private removeEmpty() {
+    const ranges = this.ranges.filter(({ isEmpty }) => !isEmpty);
+    return ranges.length === this.count ? this : this.updateRanges(ranges);
+  }
+
+  private find(
+    start = this.minPos,
+    end = this.maxPos,
+    cursorBias = 0,
+    predicate = (range: Range) => true
+  ) {
+    return (
+      start &&
+      end &&
+      this.ranges.find(
+        range => range.touches(start, end, cursorBias) && predicate(range)
+      )
+    );
+  }
+
+  private updateRanges(ranges: Range[]) {
+    return new Rail(ranges, this.getId);
   }
 }
 
