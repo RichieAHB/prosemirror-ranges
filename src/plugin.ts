@@ -1,29 +1,30 @@
 import { Plugin, TextSelection, AllSelection } from "prosemirror-state";
-import { DecorationSet, Decoration } from "prosemirror-view";
 import { MarkType } from "prosemirror-model";
 import { RailSet } from "./rail-set";
-import { createEndDeco } from "./utils/decoration";
+import { createRailSetDecos } from "./utils/decoration";
 import { transformPasted } from "./utils/transform-pasted";
 
 type State = RailSet;
 
+// TODO: allow generics for railName, meta (once added) etc.
 const ranges = (
   markTypes: { [railName: string]: MarkType },
   historyPlugin: Plugin,
   getId?: () => string
-) => {
-  const railNames = Object.keys(markTypes);
-  return new Plugin<State>({
+) =>
+  new Plugin<State>({
     state: {
       init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
       apply: (tr, rs, oldState, newState) => {
         if (tr.getMeta(historyPlugin) || tr.getMeta("paste")) {
-          return RailSet.fromDoc(markTypes, newState.doc);
+          return RailSet.fromDoc(markTypes, tr.doc);
         }
 
-        const rs2 = rs
-          .map(tr.mapping.map.bind(tr.mapping))
-          .updateSelection(newState.selection.from, newState.selection.to);
+        const rs2 = rs.handleUpdate(
+          tr.mapping.map.bind(tr.mapping),
+          tr.selection.from,
+          tr.selection.to
+        );
         const toggle = tr.getMeta("TOGGLE");
         return toggle ? rs2.toggle(toggle.railName, toggle.type) : rs2;
       }
@@ -66,43 +67,9 @@ const ranges = (
     props: {
       transformPasted: transformPasted(Object.values(markTypes)),
       decorations: function(this: Plugin<State>, state) {
-        const rs = this.getState(state);
-        return DecorationSet.create(
-          state.doc,
-          Object.entries(rs.rails).reduce(
-            (acc1, [railName, rail]) => [
-              ...acc1,
-              ...rail.ranges.reduce(
-                (acc2, { from, to, id, type }) => [
-                  ...acc2,
-                  createEndDeco(
-                    from,
-                    "start",
-                    type,
-                    id,
-                    rs.cursor,
-                    rs.cursorBias,
-                    railNames.indexOf(railName)
-                  ),
-                  createEndDeco(
-                    to,
-                    "end",
-                    type,
-                    id,
-                    rs.cursor,
-                    rs.cursorBias,
-                    railNames.indexOf(railName)
-                  )
-                ],
-                [] as Decoration[]
-              )
-            ],
-            [] as Decoration[]
-          )
-        );
+        return createRailSetDecos(this.getState(state), state);
       }
     }
   });
-};
 
 export { ranges };

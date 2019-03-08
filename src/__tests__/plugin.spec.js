@@ -178,6 +178,17 @@ describe("Noter Plugin", () => {
     );
 
     testIO(
+      "adds a note when at a cursor then typing just after another rail",
+      t(p("foo", flag({ id: 1 }, "no<a>te"), "more")),
+      s =>
+        s
+          .right(3)
+          .runCommand("toggleNote")
+          .type("hi"),
+      t(p("foo", flag({ id: 1 }, "note"), note({ id: 2 }, "hi"), "more"))
+    );
+
+    testIO(
       "removes a note when cursor inside one",
       t(p("foo", note({ id: 1 }, "no<a>te"), "more")),
       s => s.runCommand("toggleNote"),
@@ -341,6 +352,36 @@ describe("Noter Plugin", () => {
     s => s.right(3).type("bar"),
     t(p("foo", note({ id: 1 }, "note"), "barmore"))
   );
+
+  testIO(
+    "has a position between two adjacent notes with different types",
+    t(
+      p(
+        "foo",
+        note({ id: 1 }, "no<a>te"),
+        note({ id: 2, type: "another" }, "note"),
+        "more"
+      )
+    ),
+    s => s.right(3).type("bar"),
+    t(
+      p(
+        "foo",
+        note({ id: 1 }, "note"),
+        "bar",
+        note({ id: 2, type: "another" }, "note"),
+        "more"
+      )
+    )
+  );
+
+  // TODO: fix this test - maybe find an heuristic
+  // testIO(
+  //   "doesn't extend note at the end when outside at the end of a document",
+  //   t(p("foo", note({ id: 1 }, "no<a>te"))),
+  //   s => s.right(3).type("bar"),
+  //   t(p("foo", note({ id: 1 }, "note"), "bar"))
+  // );
 
   testIO(
     "can handle pasting into a note",

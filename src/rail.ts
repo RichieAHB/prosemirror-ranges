@@ -41,7 +41,7 @@ class Rail {
   map(mapFrom: (pos: number) => number, mapTo = mapFrom) {
     const { ranges, didUpdate } = this.reduce(
       ({ ranges, didUpdate }, range) => {
-        const range1 = range.map(from => mapFrom(from), to => mapTo(to));
+        const range1 = range.map(mapFrom, mapTo);
         return {
           ranges: [...ranges, range1],
           didUpdate: didUpdate || range1 !== range

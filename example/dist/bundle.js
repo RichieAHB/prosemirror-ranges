@@ -15539,8 +15539,8 @@
 	    // Takes a function to map positions, if the positions don't change then we
 	    // get the same object ref back
 	    map(mapFrom, mapTo = mapFrom) {
-	        const from = mapFrom(this.from);
-	        const to = mapTo(this.to);
+	        const from = mapFrom(this.from, this.isEmpty);
+	        const to = mapTo(this.to, this.isEmpty);
 	        return this.from === from && this.to === to
 	            ? this
 	            : new Range(this.id, from, to, this.type);
@@ -15548,7 +15548,7 @@
 	    slice(min, max, id) {
 	        const before = this.removeAfter(min);
 	        const after = before
-	            ? this.removeBefore(max).updateId(typeof id === 'function' ? id() : id)
+	            ? this.removeBefore(max).updateId(typeof id === "function" ? id() : id)
 	            : this.removeBefore(max);
 	        return [before, after].filter(({ isEmpty }) => !isEmpty);
 	    }
@@ -15610,7 +15610,7 @@
 	    // reference back
 	    map(mapFrom, mapTo = mapFrom) {
 	        const { ranges, didUpdate } = this.reduce(({ ranges, didUpdate }, range) => {
-	            const range1 = range.map(from => mapFrom(from), to => mapTo(to));
+	            const range1 = range.map(mapFrom, mapTo);
 	            return {
 	                ranges: [...ranges, range1],
 	                didUpdate: didUpdate || range1 !== range
@@ -15833,7 +15833,7 @@
 	        return RailSet.create(Object.entries(markTypes).reduce((acc, [railName, markType]) => (Object.assign({}, acc, { [railName]: Rail.create(readRangesFromDoc(doc, markType), getId) })), {}));
 	    }
 	    static empty(from = 0, to = from) {
-	        return new RailSet({}, from, to, 0);
+	        return new RailSet({}, from, to, 0, null);
 	    }
 	    static create(rails, from = 0, to = from) {
 	        // -Infinity means we'll always return false for a cursor move
@@ -15842,34 +15842,22 @@
 	            .reduce((railSet, [name, rail]) => railSet.setRail(name, rail), RailSet.empty(-Infinity))
 	            .updateSelection(from, to);
 	    }
+	    handleUpdate(mapper, from, to) {
+	        return this.map(mapper).updateSelection(from, to);
+	    }
+	    // convenience for tests
 	    updateCursor(pos) {
 	        return this.updateSelection(pos, pos);
 	    }
 	    get cursor() {
 	        return getCursor(this.from, this.to);
 	    }
-	    map(mapper) {
-	        return new RailSet(Object.entries(this.rails).reduce((acc, [name, rail]) => (Object.assign({}, acc, { [name]: rail.map(pos => mapper(pos, -this.cursorBias)) })), {}), this.from, this.to, this.cursorBias);
-	    }
-	    updateSelection(from, to) {
-	        if (this.from === from && this.to === to) {
-	            return this;
-	        }
-	        const { cursor: prevCursor } = this;
-	        const cursor = getCursor(from, to);
-	        if (prevCursor === null || cursor === null) {
-	            // we're got a selection and not a cursor
-	            return new RailSet(this.rails, from, to, 0);
-	        }
-	        const { pos, bias } = this.getNextCursorSpec(prevCursor, cursor);
-	        return new RailSet(this.rails, pos, pos, bias);
-	    }
 	    getRail(railName) {
 	        return this.rails[railName];
 	    }
 	    // overwrite or add a rail
 	    setRail(railName, rail) {
-	        return new RailSet(Object.assign({}, this.rails, { [railName]: rail }), this.from, this.to, this.cursorBias);
+	        return new RailSet(Object.assign({}, this.rails, { [railName]: rail }), this.from, this.to, this.cursorBias, this.placeholderSpec);
 	    }
 	    // insert a range
 	    toggle(railName, type) {
@@ -15877,6 +15865,11 @@
 	        const rail = this.getRail(railName);
 	        if (!rail) {
 	            throw new Error(`Rail with name ${railName} not found, add it first`);
+	        }
+	        if (this.cursor !== null && !rail.rangeAt(this.cursor, this.cursorBias)) {
+	            return this.placeholderSpec
+	                ? this.removePlaceholder()
+	                : this.addPlaceholder(railName, type);
 	        }
 	        return this.setRail(railName, rail.toggle(this.from, this.to, this.cursorBias, type));
 	    }
@@ -15897,11 +15890,46 @@
 	    }
 	    /* Private */
 	    // should not use constructor in order to avoid incorrect `cursorBias` values
-	    constructor(rails, from, to, cursorBias = 0) {
+	    constructor(rails, from, to, cursorBias = 0, placeholder) {
 	        this.rails = rails;
 	        this.from = from;
 	        this.to = to;
 	        this.cursorBias = cursorBias;
+	        this.placeholderSpec = placeholder;
+	    }
+	    map(mapper) {
+	        // TODO: tidy
+	        // attempt to map the placeholder and add it,
+	        // it will be remove in any case where it hasn't been increased in size
+	        const placeholderSpec = this.placeholderSpec &&
+	            [
+	                this.placeholderSpec[0],
+	                this.placeholderSpec[1].map(pos => mapper(pos, -1), pos => mapper(pos, 1))
+	            ];
+	        return new RailSet(Object.entries(this.rails).reduce((acc, [railName, rail]) => {
+	            const rail2 = rail.map(pos => mapper(pos, 0.5 - this.cursorBias), pos => mapper(pos, -0.5 - this.cursorBias));
+	            if (!placeholderSpec) {
+	                return Object.assign({}, acc, { [railName]: rail2 });
+	            }
+	            const [placeholderRailName, placeholder] = placeholderSpec;
+	            const rail3 = placeholderRailName === railName
+	                ? rail.add(placeholder.from, placeholder.to, placeholder.type)
+	                : rail2;
+	            return Object.assign({}, acc, { [railName]: rail3 });
+	        }, {}), this.from, this.to, this.cursorBias, placeholderSpec);
+	    }
+	    updateSelection(from, to) {
+	        if (this.from === from && this.to === to) {
+	            return this;
+	        }
+	        const { cursor: prevCursor } = this;
+	        const cursor = getCursor(from, to);
+	        if (prevCursor === null || cursor === null) {
+	            // we're got a selection and not a cursor
+	            return new RailSet(this.rails, from, to, 0, null);
+	        }
+	        const { pos, bias } = this.getNextCursorSpec(prevCursor, cursor);
+	        return new RailSet(this.rails, pos, pos, bias, null);
 	    }
 	    getNextCursorSpec(pos, candidatePos) {
 	        const { cursorBias } = this;
@@ -15934,83 +15962,99 @@
 	            bias: -Math.sign(offset)
 	        };
 	    }
+	    addPlaceholder(railName, type) {
+	        return new RailSet(this.rails, this.from, this.to, 1, [
+	            railName,
+	            Range.create("placeholder", this.from, this.from, type)
+	        ]);
+	    }
+	    removePlaceholder() {
+	        return new RailSet(this.rails, this.from, this.to, this.cursorBias, null);
+	    }
 	}
-	//# sourceMappingURL=rail-set.js.map
 
-	const createEndDeco = (pos, side, type, id, cursor, bias, railIndex) => {
-	    console.log(-bias * (railIndex + 1), type);
+	const createEndDeco = (pos, side, type, id, cursor, bias, railIndex, isPlaceholder = false) => {
 	    const span = document.createElement("span");
 	    span.classList.add("end", `end--${side}`, `end--${type}`);
-	    const sideBias = side === "start" ? 1 : -1;
+	    const sideBias = (side === "start" ? 1 : -1) * (isPlaceholder ? -0.1 : 1);
 	    return dist_2$3.widget(pos, span, {
 	        key: `${side}:${id}:${cursor === pos ? bias : ""}`,
-	        side: -bias + (sideBias * (railIndex + 1)),
+	        side: -bias + sideBias * (railIndex + 1),
 	        marks: []
 	    });
+	};
+	const createRangeDecos = (railNames, railName, range, rs) => [
+	    createEndDeco(range.from, "start", range.type, range.id, rs.cursor, rs.cursorBias, railNames.indexOf(railName)),
+	    createEndDeco(range.to, "end", range.type, range.id, rs.cursor, rs.cursorBias, railNames.indexOf(railName))
+	];
+	const createRailSetDecos = (rs, state) => {
+	    const railNames = Object.keys(rs.rails);
+	    const { placeholderSpec } = rs;
+	    return dist_3$3.create(state.doc, [
+	        ...Object.entries(rs.rails).reduce((acc1, [railName, rail]) => [
+	            ...acc1,
+	            ...rail.ranges.reduce((acc2, range) => [
+	                ...acc2,
+	                ...createRangeDecos(railNames, railName, range, rs)
+	            ], [])
+	        ], []),
+	        ...(placeholderSpec
+	            ? createRangeDecos(railNames, placeholderSpec[0], placeholderSpec[1], rs)
+	            : [])
+	    ]);
 	};
 	//# sourceMappingURL=decoration.js.map
 
 	const transformPasted = (markTypes) => ({ content, openStart, openEnd }) => new dist_5(sanitizeFragment(content, Object.values(markTypes), true), openStart, openEnd);
 	//# sourceMappingURL=transform-pasted.js.map
 
-	const ranges = (markTypes, historyPlugin, getId) => {
-	    const railNames = Object.keys(markTypes);
-	    return new dist_8$2({
-	        state: {
-	            init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
-	            apply: (tr, rs, oldState, newState) => {
-	                if (tr.getMeta(historyPlugin) || tr.getMeta("paste")) {
-	                    return RailSet.fromDoc(markTypes, newState.doc);
-	                }
-	                const rs2 = rs
-	                    .map(tr.mapping.map.bind(tr.mapping))
-	                    .updateSelection(newState.selection.from, newState.selection.to);
-	                const toggle = tr.getMeta("TOGGLE");
-	                return toggle ? rs2.toggle(toggle.railName, toggle.type) : rs2;
+	// TODO: allow generics for railName, meta (once added) etc.
+	const ranges = (markTypes, historyPlugin, getId) => new dist_8$2({
+	    state: {
+	        init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
+	        apply: (tr, rs, oldState, newState) => {
+	            if (tr.getMeta(historyPlugin) || tr.getMeta("paste")) {
+	                return RailSet.fromDoc(markTypes, tr.doc);
 	            }
-	        },
-	        appendTransaction: function (trs, oldState, newState) {
-	            const rs = this.getState(newState);
-	            const { cursor } = rs;
-	            const { tr } = newState;
-	            if (!trs.some(tr => tr.getMeta(historyPlugin)) &&
-	                !trs.some(tr => tr.getMeta("paste")) &&
-	                cursor !== null &&
-	                cursor !== newState.selection.from) {
-	                tr.setSelection(dist_3$2.near(newState.doc.resolve(cursor)));
-	            }
-	            // Currently there is 0 diffing but it probably wouldn't be too hard
-	            // using Range#eq and the prev range
-	            if (trs.some(tr => tr.docChanged || tr.getMeta("TOGGLE"))) {
-	                const { from, to } = new dist_5$2(newState.doc);
-	                Object.entries(rs.rails).forEach(([railName, rail]) => {
-	                    const markType = markTypes[railName];
-	                    tr.removeMark(from, to, markType);
-	                    rail.ranges.forEach(range => {
-	                        tr.addMark(range.from, range.to, markType.create({ id: range.id, type: range.type }));
-	                    });
-	                });
-	            }
-	            if (tr.docChanged || tr.selectionSet) {
-	                return tr;
-	            }
-	        },
-	        props: {
-	            transformPasted: transformPasted(Object.values(markTypes)),
-	            decorations: function (state) {
-	                const rs = this.getState(state);
-	                return dist_3$3.create(state.doc, Object.entries(rs.rails).reduce((acc1, [railName, rail]) => [
-	                    ...acc1,
-	                    ...rail.ranges.reduce((acc2, { from, to, id, type }) => [
-	                        ...acc2,
-	                        createEndDeco(from, "start", type, id, rs.cursor, rs.cursorBias, railNames.indexOf(railName)),
-	                        createEndDeco(to, "end", type, id, rs.cursor, rs.cursorBias, railNames.indexOf(railName))
-	                    ], [])
-	                ], []));
-	            }
+	            const rs2 = rs.handleUpdate(tr.mapping.map.bind(tr.mapping), tr.selection.from, tr.selection.to);
+	            const toggle = tr.getMeta("TOGGLE");
+	            return toggle ? rs2.toggle(toggle.railName, toggle.type) : rs2;
 	        }
-	    });
-	};
+	    },
+	    appendTransaction: function (trs, oldState, newState) {
+	        const rs = this.getState(newState);
+	        const { cursor } = rs;
+	        const { tr } = newState;
+	        if (!trs.some(tr => tr.getMeta(historyPlugin)) &&
+	            !trs.some(tr => tr.getMeta("paste")) &&
+	            cursor !== null &&
+	            cursor !== newState.selection.from) {
+	            tr.setSelection(dist_3$2.near(newState.doc.resolve(cursor)));
+	        }
+	        // Currently there is 0 diffing but it probably wouldn't be too hard
+	        // using Range#eq and the prev range
+	        if (trs.some(tr => tr.docChanged || tr.getMeta("TOGGLE"))) {
+	            const { from, to } = new dist_5$2(newState.doc);
+	            Object.entries(rs.rails).forEach(([railName, rail]) => {
+	                const markType = markTypes[railName];
+	                tr.removeMark(from, to, markType);
+	                rail.ranges.forEach(range => {
+	                    tr.addMark(range.from, range.to, markType.create({ id: range.id, type: range.type }));
+	                });
+	            });
+	        }
+	        if (tr.docChanged || tr.selectionSet) {
+	            return tr;
+	        }
+	    },
+	    props: {
+	        transformPasted: transformPasted(Object.values(markTypes)),
+	        decorations: function (state) {
+	            return createRailSetDecos(this.getState(state), state);
+	        }
+	    }
+	});
+	//# sourceMappingURL=plugin.js.map
 
 	// could create this when the plugin is created to make an accurate type for railName
 	const toggle = (railName, type) => (state, dispatch) => dispatch(state.tr.setMeta("TOGGLE", { railName, type }));

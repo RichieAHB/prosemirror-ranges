@@ -29,7 +29,7 @@ class Range {
   slice(min: number, max: number, id: string | (() => string)) {
     const before = this.removeAfter(min);
     const after = before
-      ? this.removeBefore(max).updateId(typeof id === 'function' ? id() : id)
+      ? this.removeBefore(max).updateId(typeof id === "function" ? id() : id)
       : this.removeBefore(max);
 
     return [before, after].filter(({ isEmpty }) => !isEmpty);
@@ -56,10 +56,6 @@ class Range {
       (start < this.to || (start === this.to && cursorBias < 0)) &&
       (end > this.from || (end === this.from && cursorBias > 0))
     );
-  }
-
-  hasPlaceholder(pos: number) {
-    return 
   }
 
   get isEmpty() {
