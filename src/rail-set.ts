@@ -6,6 +6,8 @@ import { readRangesFromDoc } from "./utils/state";
 
 const getCursor = (from: number, to: number) => (from === to ? from : null);
 
+type RailMarkTypeMap = { [railName: string]: MarkType };
+
 // handles cursoring through the ends of ranges and into other ranges
 
 // add a placeholder spec!
@@ -17,11 +19,7 @@ class RailSet {
   readonly rails: { [name: string]: Rail };
   readonly placeholderSpec: [string, Range] | null;
 
-  static fromDoc(
-    markTypes: { [railName: string]: MarkType },
-    doc: Node,
-    getId?: () => string
-  ) {
+  static fromDoc(markTypes: RailMarkTypeMap, doc: Node, getId?: () => string) {
     return RailSet.create(
       Object.entries(markTypes).reduce(
         (acc, [railName, markType]) => ({
@@ -49,11 +47,17 @@ class RailSet {
   }
 
   handleUpdate(
+    rebuildSpec: { markTypes: RailMarkTypeMap; doc: Node },
     mapper: (pos: number, bias: number) => number,
     from: number,
-    to: number
+    to: number,
+    toggle?: { railName: string; type: string }
   ) {
-    return this.map(mapper).updateSelection(from, to);
+    if (rebuildSpec) {
+      return RailSet.fromDoc(rebuildSpec.markTypes, rebuildSpec.doc);
+    }
+    const rs = this.map(mapper).updateSelection(from, to);
+    return toggle ? rs.toggle(toggle.railName, toggle.type) : rs;
   }
 
   // convenience for tests
@@ -254,4 +258,4 @@ class RailSet {
   }
 }
 
-export { RailSet };
+export { RailSet, RailMarkTypeMap };
