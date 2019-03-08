@@ -3568,7 +3568,7 @@
 	exports.ContentMatch = ContentMatch;
 	exports.DOMParser = DOMParser;
 	exports.DOMSerializer = DOMSerializer;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist);
@@ -5314,7 +5314,7 @@
 	exports.ReplaceStep = ReplaceStep;
 	exports.ReplaceAroundStep = ReplaceAroundStep;
 	exports.replaceStep = replaceStep;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$1);
@@ -6479,7 +6479,7 @@
 	exports.EditorState = EditorState;
 	exports.Plugin = Plugin;
 	exports.PluginKey = PluginKey;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$2);
@@ -11375,7 +11375,7 @@
 	exports.DecorationSet = DecorationSet;
 	exports.__serializeForClipboard = serializeForClipboard;
 	exports.__parseFromClipboard = parseFromClipboard;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$3);
@@ -11547,7 +11547,7 @@
 	exports.nodes = nodes;
 	exports.marks = marks;
 	exports.schema = schema;
-	//# sourceMappingURL=schema-basic.js.map
+
 	});
 
 	unwrapExports(schemaBasic);
@@ -11810,7 +11810,7 @@
 	exports.splitListItem = splitListItem;
 	exports.liftListItem = liftListItem;
 	exports.sinkListItem = sinkListItem;
-	//# sourceMappingURL=schema-list.js.map
+
 	});
 
 	unwrapExports(schemaList);
@@ -12052,7 +12052,7 @@
 
 	exports.keymap = keymap;
 	exports.keydownHandler = keydownHandler;
-	//# sourceMappingURL=keymap.js.map
+
 	});
 
 	unwrapExports(keymap_1);
@@ -12721,7 +12721,7 @@
 	exports.redo = redo;
 	exports.undoDepth = undoDepth;
 	exports.redoDepth = redoDepth;
-	//# sourceMappingURL=history.js.map
+
 	});
 
 	unwrapExports(history_1);
@@ -13396,7 +13396,7 @@
 	exports.pcBaseKeymap = pcBaseKeymap;
 	exports.macBaseKeymap = macBaseKeymap;
 	exports.baseKeymap = baseKeymap;
-	//# sourceMappingURL=commands.js.map
+
 	});
 
 	unwrapExports(commands);
@@ -13547,7 +13547,7 @@
 	};
 
 	exports.dropCursor = dropCursor;
-	//# sourceMappingURL=dropcursor.js.map
+
 	});
 
 	unwrapExports(dropcursor);
@@ -13745,7 +13745,7 @@
 
 	exports.gapCursor = gapCursor;
 	exports.GapCursor = GapCursor;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$5);
@@ -14590,7 +14590,7 @@
 	exports.wrapItem = wrapItem;
 	exports.blockTypeItem = blockTypeItem;
 	exports.menuBar = menuBar;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$6);
@@ -14782,7 +14782,7 @@
 	exports.smartQuotes = smartQuotes;
 	exports.wrappingInputRule = wrappingInputRule;
 	exports.textblockTypeInputRule = textblockTypeInputRule;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$7);
@@ -15427,7 +15427,7 @@
 	exports.buildKeymap = buildKeymap;
 	exports.buildInputRules = buildInputRules;
 	exports.exampleSetup = exampleSetup;
-	//# sourceMappingURL=index.js.map
+
 	});
 
 	unwrapExports(dist$8);
@@ -15539,8 +15539,8 @@
 	    // Takes a function to map positions, if the positions don't change then we
 	    // get the same object ref back
 	    map(mapFrom, mapTo = mapFrom) {
-	        const from = mapFrom(this.from, this.isEmpty);
-	        const to = mapTo(this.to, this.isEmpty);
+	        const from = mapFrom(this.from);
+	        const to = mapTo(this.to);
 	        return this.from === from && this.to === to
 	            ? this
 	            : new Range(this.id, from, to, this.type);
@@ -15567,9 +15567,6 @@
 	        return ((start < this.to || (start === this.to && cursorBias < 0)) &&
 	            (end > this.from || (end === this.from && cursorBias > 0)));
 	    }
-	    hasPlaceholder(pos) {
-	        return;
-	    }
 	    get isEmpty() {
 	        return this.from >= this.to;
 	    }
@@ -15580,7 +15577,6 @@
 	        return new Range(id, this.from, this.to, this.type);
 	    }
 	}
-	//# sourceMappingURL=range.js.map
 
 	const MoveTypes = {
 	    IN: 0,
@@ -15588,7 +15584,6 @@
 	    BETWEEN: 2,
 	    NONE: 3
 	};
-	//# sourceMappingURL=contants.js.map
 
 	const notEmpty = (value) => value !== null && value !== undefined;
 	class Rail {
@@ -15728,7 +15723,6 @@
 	        return (this.count && this.reduce((max, { to }) => Math.max(max, to), -Infinity));
 	    }
 	}
-	//# sourceMappingURL=rail.js.map
 
 	const readRangesFromDoc = (doc, markType, min, max) => {
 	    const ranges = {};
@@ -15823,7 +15817,6 @@
 	};
 	// markTypes can either be a MarkType or MarkType[]
 	const sanitizeFragment = (frag, markTypes, replaceAllIds, createId) => markTypes.reduce((nextFrag, markType) => sanitizeFragmentInner(nextFrag, markType, replaceAllIds, createId), frag);
-	//# sourceMappingURL=state.js.map
 
 	const getCursor = (from, to) => (from === to ? from : null);
 	// handles cursoring through the ends of ranges and into other ranges
@@ -15842,8 +15835,12 @@
 	            .reduce((railSet, [name, rail]) => railSet.setRail(name, rail), RailSet.empty(-Infinity))
 	            .updateSelection(from, to);
 	    }
-	    handleUpdate(mapper, from, to) {
-	        return this.map(mapper).updateSelection(from, to);
+	    handleUpdate(rebuildSpec, mapper, from, to, toggle) {
+	        if (rebuildSpec) {
+	            return RailSet.fromDoc(rebuildSpec.markTypes, rebuildSpec.doc);
+	        }
+	        const rs = this.map(mapper).updateSelection(from, to);
+	        return toggle ? rs.toggle(toggle.railName, toggle.type) : rs;
 	    }
 	    // convenience for tests
 	    updateCursor(pos) {
@@ -16003,49 +16000,50 @@
 	            : [])
 	    ]);
 	};
-	//# sourceMappingURL=decoration.js.map
 
 	const transformPasted = (markTypes) => ({ content, openStart, openEnd }) => new dist_5(sanitizeFragment(content, Object.values(markTypes), true), openStart, openEnd);
-	//# sourceMappingURL=transform-pasted.js.map
+
+	const transactionShouldSetSelection = (cursor, trs, state, historyPlugin) => !trs.some(tr => tr.getMeta(historyPlugin) || tr.getMeta("paste")) &&
+	    cursor !== state.selection.from;
+	const transactionShouldRebuildMarks = (trs) => trs.some(tr => tr.docChanged || tr.getMeta("TOGGLE"));
+	// Currently there is zero diffing but it probably wouldn't be too hard
+	// using Range#eq and the prev range
+	const rebuildRailMarks = (markTypes, tr, rs) => {
+	    const { from, to } = new dist_5$2(tr.doc);
+	    Object.entries(rs.rails).forEach(([railName, rail]) => {
+	        const markType = markTypes[railName];
+	        tr.removeMark(from, to, markType);
+	        rail.ranges.forEach(range => {
+	            tr.addMark(range.from, range.to, markType.create({ id: range.id, type: range.type }));
+	        });
+	    });
+	};
+	const maybeAppendTransaction = (markTypes, rs, trs, newState, historyPlugin) => {
+	    const { cursor } = rs;
+	    const { tr } = newState;
+	    if (cursor &&
+	        transactionShouldSetSelection(cursor, trs, newState, historyPlugin)) {
+	        tr.setSelection(dist_3$2.near(newState.doc.resolve(cursor)));
+	    }
+	    if (transactionShouldRebuildMarks(trs)) {
+	        rebuildRailMarks(markTypes, tr, rs);
+	    }
+	    if (tr.docChanged || tr.selectionSet) {
+	        return tr;
+	    }
+	};
 
 	// TODO: allow generics for railName, meta (once added) etc.
 	const ranges = (markTypes, historyPlugin, getId) => new dist_8$2({
 	    state: {
 	        init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
-	        apply: (tr, rs, oldState, newState) => {
-	            if (tr.getMeta(historyPlugin) || tr.getMeta("paste")) {
-	                return RailSet.fromDoc(markTypes, tr.doc);
-	            }
-	            const rs2 = rs.handleUpdate(tr.mapping.map.bind(tr.mapping), tr.selection.from, tr.selection.to);
-	            const toggle = tr.getMeta("TOGGLE");
-	            return toggle ? rs2.toggle(toggle.railName, toggle.type) : rs2;
-	        }
+	        apply: (tr, rs) => rs.handleUpdate((tr.getMeta(historyPlugin) || tr.getMeta("paste")) && {
+	            markTypes,
+	            doc: tr.doc
+	        }, tr.mapping.map.bind(tr.mapping), tr.selection.from, tr.selection.to, tr.getMeta("TOGGLE"))
 	    },
 	    appendTransaction: function (trs, oldState, newState) {
-	        const rs = this.getState(newState);
-	        const { cursor } = rs;
-	        const { tr } = newState;
-	        if (!trs.some(tr => tr.getMeta(historyPlugin)) &&
-	            !trs.some(tr => tr.getMeta("paste")) &&
-	            cursor !== null &&
-	            cursor !== newState.selection.from) {
-	            tr.setSelection(dist_3$2.near(newState.doc.resolve(cursor)));
-	        }
-	        // Currently there is 0 diffing but it probably wouldn't be too hard
-	        // using Range#eq and the prev range
-	        if (trs.some(tr => tr.docChanged || tr.getMeta("TOGGLE"))) {
-	            const { from, to } = new dist_5$2(newState.doc);
-	            Object.entries(rs.rails).forEach(([railName, rail]) => {
-	                const markType = markTypes[railName];
-	                tr.removeMark(from, to, markType);
-	                rail.ranges.forEach(range => {
-	                    tr.addMark(range.from, range.to, markType.create({ id: range.id, type: range.type }));
-	                });
-	            });
-	        }
-	        if (tr.docChanged || tr.selectionSet) {
-	            return tr;
-	        }
+	        return maybeAppendTransaction(markTypes, this.getState(newState), trs, newState, historyPlugin);
 	    },
 	    props: {
 	        transformPasted: transformPasted(Object.values(markTypes)),
@@ -16054,11 +16052,9 @@
 	        }
 	    }
 	});
-	//# sourceMappingURL=plugin.js.map
 
 	// could create this when the plugin is created to make an accurate type for railName
 	const toggle = (railName, type) => (state, dispatch) => dispatch(state.tr.setMeta("TOGGLE", { railName, type }));
-	//# sourceMappingURL=command.js.map
 
 	const addRangeMark = (marks, { markName, typeTagMap }) => marks.append({
 	    [markName]: {
@@ -16084,9 +16080,6 @@
 	    }
 	});
 	const addRangeMarks = (marks, rangeMarkSpecs) => rangeMarkSpecs.reduce((marks, rangeMarkSpec) => addRangeMark(marks, rangeMarkSpec), orderedmap.from(marks || {}));
-	//# sourceMappingURL=schema.js.map
-
-	//# sourceMappingURL=index.js.map
 
 	const FLAG_MARK_NAME = "flag";
 	const FLAG_RAIL_NAME = "flag";
@@ -16146,6 +16139,5 @@
 	        }
 	    });
 	}
-	//# sourceMappingURL=index.js.map
 
 }());
