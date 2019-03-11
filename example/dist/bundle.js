@@ -15577,6 +15577,7 @@
 	        return this.map(pos => Math.max(min, pos));
 	    }
 	}
+	//# sourceMappingURL=range.js.map
 
 	const MoveTypes = {
 	    IN: 0,
@@ -15593,16 +15594,7 @@
 	    static create(rangeSpecs, getId) {
 	        return rangeSpecs.reduce((rail, { id, from, to, type }) => rail.add(from, to, type, id), Rail.empty(getId));
 	    }
-	    diff(b) {
-	        const a = this;
-	        return {
-	            a: a.ranges.filter(r => !b.ranges.includes(r)),
-	            b: b.ranges.filter(r => !a.ranges.includes(r)) // exist only in b
-	        };
-	    }
 	    // maps all the ranges based on a mapper that accepts positions and inside
-	    // if none of the mappings have any effect then we get the same object
-	    // reference back
 	    map(mapFrom, mapTo = mapFrom) {
 	        return this.updateRanges(this.ranges.map(range => range.map(mapFrom, mapTo))).removeEmpty();
 	    }
@@ -15662,7 +15654,12 @@
 	        return this.count === ranges.length ? this : this.updateRanges(ranges);
 	    }
 	    rangeAt(pos, cursorBias = 0, predicate = (range) => true) {
-	        return this.find(pos, pos, cursorBias, predicate);
+	        return this.find(predicate, pos, pos, cursorBias);
+	    }
+	    find(predicate, start = this.minPos, end = this.maxPos, cursorBias = 0) {
+	        return (start &&
+	            end &&
+	            this.ranges.find(range => range.touches(start, end, cursorBias) && predicate(range)));
 	    }
 	    get count() {
 	        return this.ranges.length;
@@ -15688,11 +15685,6 @@
 	    removeEmpty() {
 	        const ranges = this.ranges.filter(({ isEmpty }) => !isEmpty);
 	        return ranges.length === this.count ? this : this.updateRanges(ranges);
-	    }
-	    find(start = this.minPos, end = this.maxPos, cursorBias = 0, predicate = (range) => true) {
-	        return (start &&
-	            end &&
-	            this.ranges.find(range => range.touches(start, end, cursorBias) && predicate(range)));
 	    }
 	    updateRanges(ranges) {
 	        return new Rail(ranges, this.getId);
@@ -15959,20 +15951,22 @@
 	const namespaceClass = (className) => `${CLASS_NAMESPACE}${className}`;
 	//# sourceMappingURL=classes.js.map
 
-	const createEndDeco = (pos, side, type, id, cursor, bias, railIndex, isPlaceholder = false) => {
+	const createEndDeco = (pos, side, type, id, cursor, bias, railName, railIndex, isPlaceholder) => {
 	    const span = document.createElement("span");
 	    const prefix = namespaceClass("end");
 	    span.classList.add(prefix, `${prefix}--${side}`, `${prefix}--${type}`);
+	    span.dataset.rangeId = id;
+	    span.dataset.railName = railName;
 	    const sideBias = (side === "start" ? 1 : -1) * (isPlaceholder ? -0.1 : 1);
 	    return dist_2$3.widget(pos, span, {
-	        key: `${side}:${id}:${cursor === pos ? bias : ""}`,
+	        key: `${side}:${railName}:${id}:${cursor === pos ? bias : ""}`,
 	        side: -bias + sideBias * (railIndex + 1),
 	        marks: []
 	    });
 	};
-	const createRangeDecos = (railNames, railName, range, rs) => [
-	    createEndDeco(range.from, "start", range.type, range.id, rs.cursor, rs.cursorBias, railNames.indexOf(railName)),
-	    createEndDeco(range.to, "end", range.type, range.id, rs.cursor, rs.cursorBias, railNames.indexOf(railName))
+	const createRangeDecos = (railNames, railName, range, rs, isPlaceholder = false) => [
+	    createEndDeco(range.from, "start", range.type, range.id, rs.cursor, rs.cursorBias, railName, railNames.indexOf(railName), isPlaceholder),
+	    createEndDeco(range.to, "end", range.type, range.id, rs.cursor, rs.cursorBias, railName, railNames.indexOf(railName), isPlaceholder)
 	];
 	const createRailSetEndDecos = (rs) => {
 	    const railNames = Object.keys(rs.rails);
@@ -15986,7 +15980,7 @@
 	            ], [])
 	        ], []),
 	        ...(placeholderSpec
-	            ? createRangeDecos(railNames, placeholderSpec[0], placeholderSpec[1], rs)
+	            ? createRangeDecos(railNames, placeholderSpec[0], placeholderSpec[1], rs, true)
 	            : [])
 	    ];
 	};
@@ -16046,8 +16040,25 @@
 	};
 	//# sourceMappingURL=transaction.js.map
 
+	const handleClick = (getRangeByRailNameAndId, handleClick, { dispatch, state }, e) => {
+	    const { target } = e;
+	    if (!target) {
+	        return false;
+	    }
+	    const { rangeId, railName } = target.dataset;
+	    if (!rangeId || !railName) {
+	        return false;
+	    }
+	    const range = getRangeByRailNameAndId(railName, rangeId);
+	    if (!range) {
+	        return false;
+	    }
+	    handleClick(e, range, state, dispatch);
+	    return true;
+	};
+
 	// TODO: allow generics for railName, meta (once added) etc.
-	const ranges = (markTypes, historyPlugin, getId) => new dist_8$2({
+	const ranges = (markTypes, historyPlugin, handleEndClick, getId) => new dist_8$2({
 	    state: {
 	        init: (_, state) => RailSet.fromDoc(markTypes, state.doc, getId),
 	        apply: (tr, rs) => rs.update(tr.mapping.map.bind(tr.mapping), tr.selection.from, tr.selection.to, tr.docChanged, (tr.getMeta(historyPlugin) || tr.getMeta("paste")) && {
@@ -16060,6 +16071,12 @@
 	    },
 	    props: {
 	        transformPasted: transformPasted(Object.values(markTypes)),
+	        handleClick: function (view, _, event) {
+	            return handleClick((railName, id) => {
+	                const rail = this.getState(view.state).rails[railName];
+	                return rail ? rail.find(r => r.id === id) || null : null;
+	            }, handleEndClick, view, event);
+	        },
 	        attributes: function (state) {
 	            const rs = this.getState(state);
 	            return rs.cursorAtBoundary !== null
@@ -16075,7 +16092,6 @@
 	        }
 	    }
 	});
-	//# sourceMappingURL=plugin.js.map
 
 	const addRangeMark = (marks, { markName, typeTagMap }) => marks.append({
 	    [markName]: {

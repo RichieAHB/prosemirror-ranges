@@ -24,17 +24,7 @@ class Rail {
     );
   }
 
-  diff(b: Rail) {
-    const a = this;
-    return {
-      a: a.ranges.filter(r => !b.ranges.includes(r)), // exist only in this
-      b: b.ranges.filter(r => !a.ranges.includes(r)) // exist only in b
-    };
-  }
-
   // maps all the ranges based on a mapper that accepts positions and inside
-  // if none of the mappings have any effect then we get the same object
-  // reference back
   map(mapFrom: (pos: number) => number, mapTo = mapFrom) {
     return this.updateRanges(
       this.ranges.map(range => range.map(mapFrom, mapTo))
@@ -89,6 +79,7 @@ class Rail {
       id: null,
       from: start
     };
+
     const { to, id: id2 } = this.rangeAt(end, 1, hasType) || {
       id: null,
       to: end
@@ -108,7 +99,22 @@ class Rail {
   }
 
   rangeAt(pos: number, cursorBias = 0, predicate = (range: Range) => true) {
-    return this.find(pos, pos, cursorBias, predicate);
+    return this.find(predicate, pos, pos, cursorBias);
+  }
+
+  find(
+    predicate: (range: Range) => boolean,
+    start = this.minPos,
+    end = this.maxPos,
+    cursorBias = 0
+  ) {
+    return (
+      start &&
+      end &&
+      this.ranges.find(
+        range => range.touches(start, end, cursorBias) && predicate(range)
+      )
+    );
   }
 
   get count() {
@@ -149,21 +155,6 @@ class Rail {
   private removeEmpty() {
     const ranges = this.ranges.filter(({ isEmpty }) => !isEmpty);
     return ranges.length === this.count ? this : this.updateRanges(ranges);
-  }
-
-  private find(
-    start = this.minPos,
-    end = this.maxPos,
-    cursorBias = 0,
-    predicate = (range: Range) => true
-  ) {
-    return (
-      start &&
-      end &&
-      this.ranges.find(
-        range => range.touches(start, end, cursorBias) && predicate(range)
-      )
-    );
   }
 
   private updateRanges(ranges: Range[]) {

@@ -10,15 +10,18 @@ const createEndDeco = (
   id: string,
   cursor: number | null,
   bias: number,
+  railName: string,
   railIndex: number,
-  isPlaceholder = false
+  isPlaceholder: boolean
 ) => {
   const span = document.createElement("span");
   const prefix = ns("end");
   span.classList.add(prefix, `${prefix}--${side}`, `${prefix}--${type}`);
+  span.dataset.rangeId = id;
+  span.dataset.railName = railName;
   const sideBias = (side === "start" ? 1 : -1) * (isPlaceholder ? -0.1 : 1);
   return Decoration.widget(pos, span, {
-    key: `${side}:${id}:${cursor === pos ? bias : ""}`,
+    key: `${side}:${railName}:${id}:${cursor === pos ? bias : ""}`,
     side: -bias + sideBias * (railIndex + 1),
     marks: []
   });
@@ -28,7 +31,8 @@ const createRangeDecos = (
   railNames: string[],
   railName: string,
   range: Range,
-  rs: RailSet
+  rs: RailSet,
+  isPlaceholder = false
 ) => [
   createEndDeco(
     range.from,
@@ -37,7 +41,9 @@ const createRangeDecos = (
     range.id,
     rs.cursor,
     rs.cursorBias,
-    railNames.indexOf(railName)
+    railName,
+    railNames.indexOf(railName),
+    isPlaceholder
   ),
   createEndDeco(
     range.to,
@@ -46,7 +52,9 @@ const createRangeDecos = (
     range.id,
     rs.cursor,
     rs.cursorBias,
-    railNames.indexOf(railName)
+    railName,
+    railNames.indexOf(railName),
+    isPlaceholder
   )
 ];
 
@@ -68,7 +76,13 @@ const createRailSetEndDecos = (rs: RailSet) => {
       [] as Decoration[]
     ),
     ...(placeholderSpec
-      ? createRangeDecos(railNames, placeholderSpec[0], placeholderSpec[1], rs)
+      ? createRangeDecos(
+          railNames,
+          placeholderSpec[0],
+          placeholderSpec[1],
+          rs,
+          true
+        )
       : [])
   ];
 };

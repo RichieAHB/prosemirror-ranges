@@ -9,6 +9,7 @@ import { maybeAppendTransaction } from "./utils/transaction";
 import { DecorationSet } from "prosemirror-view";
 import { TOGGLE_KEY } from "./utils/command";
 import { namespaceClass as ns } from "./utils/classes";
+import { handleClick, ClickHandler } from "./utils/handle-click";
 
 type State = RailSet;
 
@@ -16,6 +17,7 @@ type State = RailSet;
 const ranges = (
   markTypes: RailMarkTypeMap,
   historyPlugin: Plugin,
+  handleEndClick: ClickHandler,
   getId?: () => string
 ) =>
   new Plugin<State>({
@@ -45,6 +47,17 @@ const ranges = (
     },
     props: {
       transformPasted: transformPasted(Object.values(markTypes)),
+      handleClick: function(this: Plugin<State>, view, _, event) {
+        return handleClick(
+          (railName, id) => {
+            const rail = this.getState(view.state).rails[railName];
+            return rail ? rail.find(r => r.id === id) || null : null;
+          },
+          handleEndClick,
+          view,
+          event
+        );
+      },
       attributes: function(
         this: Plugin<State>,
         state
